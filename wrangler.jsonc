@@ -2,6 +2,13 @@
   "$schema": "https://json.schemastore.org/wrangler.json",
   "name": "ai-jurepi-kr",
   "main": ".open-next/worker.js",
+  // Static assets (Next.js /_next/static/**, public/**) — served by the OpenNext
+  // worker via the ASSETS binding. Without this, every static chunk/CSS 404s and
+  // the page renders unstyled + non-interactive. Binding name MUST be "ASSETS".
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
   "compatibility_date": "2025-07-20",
   "compatibility_flags": ["nodejs_compat"],
 
