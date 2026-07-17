@@ -15,7 +15,6 @@ import {
   type FaceAnalysis,
 } from '@/lib/hairstyle-recommendation';
 import { getProvider } from '@/lib/hairstyle-recommendation/ai';
-import { getAIProviderKey } from '@/lib/env';
 
 /**
  * POST /api/hairstyle/analyze
@@ -100,19 +99,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Validate AI provider key is available
-    let providerKey: string;
-    try {
-      providerKey = getAIProviderKey();
-    } catch (err) {
-      // Key missing or invalid — do NOT expose details
-      return NextResponse.json(
-        error('AI_UNAVAILABLE', 'Our style advisor is temporarily unavailable'),
-        { status: 502 }
-      );
-    }
-
-    // 7. Call provider (image is kept in memory ONLY, never persisted)
+    // 6. Call provider (image is kept in memory ONLY, never persisted).
+    // The provider key is resolved inside getProvider() from the Cloudflare
+    // runtime context; a missing key surfaces as AI_UNAVAILABLE in the catch below.
     const provider = getProvider();
     let analysis: FaceAnalysis;
 

@@ -16,7 +16,6 @@ import {
   type Recommendation,
 } from '@/lib/hairstyle-recommendation';
 import { getProvider } from '@/lib/hairstyle-recommendation/ai';
-import { getAIProviderKey } from '@/lib/env';
 
 /**
  * POST /api/hairstyle/recommend
@@ -78,19 +77,9 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    // 4. Validate AI provider key is available
-    let providerKey: string;
-    try {
-      providerKey = getAIProviderKey();
-    } catch (err) {
-      // Key missing or invalid — do NOT expose details
-      return NextResponse.json(
-        error('AI_UNAVAILABLE', 'Our style advisor is temporarily unavailable'),
-        { status: 502 }
-      );
-    }
-
-    // 5. Get candidate hairstyles
+    // 4. Get candidate hairstyles
+    // (Provider key is resolved inside getProvider() from the Cloudflare runtime
+    // context; a missing key surfaces as AI_UNAVAILABLE in the step-5 catch below.)
     const candidates = matchCandidates(recommendInput);
 
     // 6. Call provider to recommend
