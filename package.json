@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "cf:build": "open-next build",
-    "preview": "wrangler pages dev .opennext/dist",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:deploy": "opennextjs-cloudflare deploy",
+    "preview": "opennextjs-cloudflare preview",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

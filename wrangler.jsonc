@@ -9,14 +9,11 @@
     "enabled": true
   },
 
-  // Cloudflare KV for rate-limit storage (optional but recommended for prod)
-  "kv_namespaces": [
-    {
-      "binding": "RATE_LIMIT_KV",
-      "id": "{{ SET_AT_DEPLOYMENT }}",
-      "preview_id": "{{ SET_AT_DEPLOYMENT }}"
-    }
-  ],
+  // Cloudflare KV for rate-limit storage — add when the first AI tool ships.
+  // A placeholder id breaks `wrangler deploy`, so it is omitted for now; the
+  // rate-limit util falls back to a per-isolate limiter when RATE_LIMIT_KV is unbound.
+  // To enable: `npx wrangler kv namespace create RATE_LIMIT_KV`, then add
+  //   "kv_namespaces": [{ "binding": "RATE_LIMIT_KV", "id": "<real-id>" }]
 
   // Public env variables (visible in client if prefixed NEXT_PUBLIC_)
   "vars": {
