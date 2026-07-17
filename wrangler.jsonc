@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "ai-jurepi-kr",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-07-20",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Cloudflare KV for rate-limit storage (optional but recommended for prod)
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT_KV",
+      "id": "{{ SET_AT_DEPLOYMENT }}",
+      "preview_id": "{{ SET_AT_DEPLOYMENT }}"
+    }
+  ],
+
+  // Public env variables (visible in client if prefixed NEXT_PUBLIC_)
+  "vars": {
+    "AI_PROVIDER": "gemini",
+    "HAIRSTYLE_RATE_LIMIT_PER_MIN": "10",
+    "NEXT_PUBLIC_SITE_URL": "https://ai.jurepi.kr"
+  },
+
+  // Server-only secrets (set via `wrangler secret put` or GitHub Actions)
+  // - GEMINI_API_KEY
+  // - CLAUDE_API_KEY (future)
+
+  // Routes (optional, for custom domain)
+  "routes": [
+    {
+      "pattern": "ai.jurepi.kr/*",
+      "zone_name": "jurepi.kr"
+    }
+  ]
+}

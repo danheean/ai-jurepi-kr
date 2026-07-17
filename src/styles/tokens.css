@@ -1,0 +1,145 @@
+/**
+ * Design Tokens — ai.jurepi.kr
+ * Mapped from docs/DESIGN.md (single-accent red model)
+ * Source of truth for all color, spacing, typography, and radius values
+ */
+
+:root {
+  /* Primary Accent (Single Brand Red) */
+  --primary: #e60023;
+  --primary-pressed: #cc001f;
+  --on-primary: #ffffff;
+
+  /* Surfaces (Cream-tinted Neutrals) */
+  --canvas: #ffffff;
+  --surface-soft: #fbfbf9;
+  --surface-card: #f6f6f3;
+  --secondary-bg: #e5e5e0;
+  --secondary-pressed: #c8c8c1;
+  --surface-dark: #262622;
+
+  /* Text Colors */
+  --ink: #000000;
+  --ink-soft: #211922;
+  --body: #33332e;
+  --charcoal: #262622;
+  --mute: #62625b;
+  --ash: #91918c;
+  --stone: #c8c8c1;
+  --on-dark: #ffffff;
+  --on-dark-mute: rgba(255, 255, 255, 0.7);
+
+  /* Hairlines & Dividers */
+  --hairline: #dadad3;
+  --hairline-soft: #e5e5e0;
+
+  /* Semantic Colors */
+  --success-deep: #103c25;
+  --success-pale: #c7f0da;
+  --error: #9e0a0a;
+  --error-deep: #cc001f;
+  --warning: #d4a000;
+  --info: #0066cc;
+
+  /* Focus Ring */
+  --focus-outer: #435ee5;
+  --focus-inner: #ffffff;
+
+  /* Rounded Corners (Shape Vocabulary) */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 32px;
+  --radius-full: 9999px;
+
+  /* Spacing System (8px base unit) */
+  --space-xxs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-section: 64px;
+
+  /* Typography */
+  --font-display: Pretendard, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+  --font-body: Pretendard, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-pop: 0 16px 32px rgba(0, 0, 0, 0.12);
+
+  /* Duration & Easing */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Light mode (default — no media override) */
+
+/* Dark mode (optional @media override) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Surfaces flip to dark */
+    --canvas: #1a1a1a;
+    --surface-soft: #242424;
+    --surface-card: #2d2d2d;
+    --surface-dark: #0a0a0a;
+
+    /* Text flips to light */
+    --body: #e8e8e8;
+    --charcoal: #d4d4d4;
+    --ink: #ffffff;
+    --mute: #a8a8a8;
+    --ash: #808080;
+    --stone: #606060;
+
+    /* Hairlines become lighter */
+    --hairline: #404040;
+    --hairline-soft: #2a2a2a;
+
+    /* Secondary button surfaces */
+    --secondary-bg: #3a3a3a;
+    --secondary-pressed: #4a4a4a;
+
+    /* Semantic colors adjusted for dark mode */
+    --success-pale: #1a4d3d;
+    --warning: #f5b623;
+  }
+}
+
+/**
+ * Base Typography Scales
+ * (Pretendard weights 400/500/600/700)
+ *
+ * Usage: Apply these via font-size, font-weight, line-height utilities
+ * (defined in tailwind.config.ts fontSize extension).
+ *
+ * Display roles:
+ *   --font-display-xl:  70px / 600 / line 1.1 / letter -1.2px
+ *   --font-display-lg:  44px / 700 / line 1.15 / letter -0.8px
+ *
+ * Heading roles:
+ *   --font-heading-xl:  28px / 700 / line 1.2 / letter -1.2px
+ *   --font-heading-lg:  22px / 600 / line 1.25
+ *   --font-heading-md:  18px / 600 / line 1.3
+ *
+ * Body roles:
+ *   --font-body-md:     16px / 400 / line 1.4
+ *   --font-body-strong: 16px / 600 / line 1.4
+ *   --font-body-sm:     14px / 400 / line 1.4
+ *   --font-body-sm-strong: 14px / 700 / line 1.4
+ *
+ * Captions:
+ *   --font-caption-md:  12px / 500 / line 1.5
+ *   --font-caption-sm:  12px / 400 / line 1.4
+ *
+ * Links & Buttons:
+ *   --font-link-md:     16px / 600 / line 1.4
+ *   --font-button-md:   14px / 700 / line 1
+ *   --font-button-sm:   12px / 700 / line 1
+ *
+ * These are implemented via tailwind.config.ts fontSize utilities;
+ * this file serves as the source-of-truth reference.
+ */

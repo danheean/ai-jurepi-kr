@@ -1,0 +1,49 @@
+{
+  "common": {
+    "siteName": "ai.jurepi.kr",
+    "siteDescription": "Free AI Tools Hub",
+    "notFound": "Page not found",
+    "goHome": "Go back home"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "contact": "Contact"
+  },
+  "home": {
+    "meta": {
+      "title": "Free AI Tools - AI-Powered Online Utilities",
+      "description": "AI-powered online utilities in one place. Use free AI tools including hairstyle recommendations and more from our platform."
+    },
+    "eyebrow": "✨ Free AI Tools",
+    "title": "Daily tools in one place",
+    "subtitle": "AI-powered online utilities in one place",
+    "ctaButton": "Request a tool",
+    "contactEmail": "hello@jurepi.kr",
+    "requestSubject": "ai.jurepi.kr - Tool Request",
+    "mascotPlaceholder": "Mascot",
+    "searchPlaceholder": "Search tools...",
+    "noResults": "No results found",
+    "resetSearch": "Reset search",
+    "comingSoon": "Coming soon"
+  },
+  "footer": {
+    "copyright": "© 2026 ai.jurepi.kr",
+    "allRightsReserved": "All rights reserved"
+  },
+  "consent": {
+    "title": "Privacy Notice",
+    "message": "This site uses cookies for analytics and advertising.",
+    "accept": "Accept",
+    "reject": "Reject",
+    "settings": "Settings"
+  },
+  "tools": {
+    "hairstyle-recommendation": {
+      "name": "Hairstyle Recommendation",
+      "description": "Get AI-recommended hairstyles tailored to your face shape"
+    }
+  }
+}
