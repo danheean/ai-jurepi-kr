@@ -105,6 +105,9 @@ importers:
       vitest:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.43)(@vitest/ui@2.1.9)(jsdom@24.1.3)(lightningcss@1.32.0)(terser@5.16.9)
+      wrangler:
+        specifier: ^4.0.0
+        version: 4.111.0
 
 packages:
 
