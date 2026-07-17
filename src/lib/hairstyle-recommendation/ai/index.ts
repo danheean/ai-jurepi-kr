@@ -27,8 +27,9 @@ export function getProvider(): HairstyleAI {
 
   switch (provider) {
     case 'gemini': {
-      const apiKey = process.env.GEMINI_API_KEY;
-      // Throw at call time so missing key triggers AI_UNAVAILABLE in routes
+      // Accept either name — GEMINI_API_KEY (preferred) or GOOGLE_API_KEY,
+      // the common Google AI Studio env name. Missing key → AI_UNAVAILABLE at call time.
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
       return new GeminiProvider(apiKey || '');
     }
 
