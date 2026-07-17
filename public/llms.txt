@@ -1,0 +1,26 @@
+# ai.jurepi.kr LLMs.txt
+
+Welcome to ai.jurepi.kr - Free AI Tools Hub
+
+## Tools
+
+### Hairstyle Recommendation (헤어스타일 추천)
+- **Korean**: https://ai.jurepi.kr/ko/tools/hairstyle-recommendation
+  Discover hairstyles that suit your face shape with AI analysis.
+- **English**: https://ai.jurepi.kr/en/tools/hairstyle-recommendation
+  Get AI-recommended hairstyles tailored to your face shape.
+
+## Privacy & Data
+
+All tools on ai.jurepi.kr are designed with privacy-first principles:
+- No user data is stored without explicit consent
+- For tools requiring image analysis (like Hairstyle Recommendation), images are analyzed once and immediately deleted
+- Never logged or persisted to any storage
+
+## Access Instructions
+
+1. Visit the tool page (Korean or English)
+2. Follow the in-app instructions
+3. Results are generated locally with no data retention
+
+For more information, visit https://ai.jurepi.kr/

@@ -1,9 +1,11 @@
 /**
  * Hairstyle Recommendation Constants
  *
- * STUB: domain-engineer will populate with real hairstyle catalog and constants
+ * Domain constants derived from SPEC.md core entities.
+ * All enum values are canonical; route handlers and catalog must conform.
  */
 
+// Face shapes (7 variants per SPEC)
 export const FACE_SHAPES = [
   'oval',
   'round',
@@ -14,29 +16,46 @@ export const FACE_SHAPES = [
   'triangle',
 ] as const;
 
-export const PREFERENCES = ['neutral', 'casual', 'formal', 'trendy'] as const;
+export type FaceShape = (typeof FACE_SHAPES)[number];
 
-export const HAIR_TYPES = ['straight', 'wavy', 'curly'] as const;
+// Style preferences (3 variants per SPEC)
+export const PREFERENCES = ['feminine', 'masculine', 'neutral'] as const;
 
-export const MAINTENANCE_LEVELS = ['low', 'medium', 'high'] as const;
+export type Preference = (typeof PREFERENCES)[number];
 
-/**
- * Default rate limit for hairstyle endpoints
- */
-export const DEFAULT_RATE_LIMIT_PER_MIN =
-  Number(process.env.HAIRSTYLE_RATE_LIMIT_PER_MIN) || 10;
+// Hair lengths (3 variants per SPEC)
+export const LENGTHS = ['short', 'medium', 'long'] as const;
 
-/**
- * Max image size: 5MB
- */
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+export type Length = (typeof LENGTHS)[number];
 
-/**
- * Allowed MIME types for images
- */
-export const ALLOWED_MIME_TYPES = [
-  'image/jpeg',
+// Hair types (4 variants per SPEC)
+export const HAIR_TYPES = ['straight', 'wavy', 'curly', 'coily'] as const;
+
+export type HairType = (typeof HAIR_TYPES)[number];
+
+// Occasions (4 variants per SPEC)
+export const OCCASIONS = ['daily', 'business', 'event', 'seasonal'] as const;
+
+export type Occasion = (typeof OCCASIONS)[number];
+
+// Image constraints per SPEC
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_EDGE_PX = 1024; // longest edge
+export const JPEG_QUALITY = 0.85;
+
+// Recommendation bounds per SPEC
+export const MIN_RECS = 3;
+export const MAX_RECS = 6;
+
+// Rate limits per SPEC
+export const RATE_LIMIT_ANALYZE_PER_MIN = 10;
+export const RATE_LIMIT_RECOMMEND_PER_MIN = 20;
+
+// Allowed image MIME types per SPEC
+export const ALLOWED_IMAGE_TYPES = [
   'image/png',
+  'image/jpeg',
   'image/webp',
-  'image/avif',
-];
+] as const;
+
+export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];

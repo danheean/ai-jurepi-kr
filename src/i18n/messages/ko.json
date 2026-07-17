@@ -43,7 +43,100 @@
   "tools": {
     "hairstyle-recommendation": {
       "name": "헤어스타일 추천",
-      "description": "얼굴형에 맞는 최적의 헤어스타일을 AI로 추천받으세요"
+      "title": "헤어스타일 추천",
+      "description": "얼굴형에 맞는 최적의 헤어스타일을 AI로 추천받으세요",
+      "entry": {
+        "photoLabel": "사진 업로드",
+        "photoSub": "AI가 얼굴형을 분석해요",
+        "manualLabel": "얼굴형 선택",
+        "manualSub": "사진 없이 직접 선택하세요"
+      },
+      "upload": {
+        "dropzone": "사진을 여기에 드래그하거나 클릭해서 선택하세요",
+        "hint": "PNG, JPG, WebP · 최대 5MB",
+        "privacy": "사진은 분석되고 즉시 삭제됩니다",
+        "remove": "삭제",
+        "analyzing": "얼굴형을 분석 중입니다...",
+        "errorType": "지원하지 않는 이미지 형식입니다. PNG, JPG, WebP를 사용해주세요.",
+        "errorSize": "이미지가 너무 큽니다. 5MB 이하의 이미지를 사용해주세요."
+      },
+      "face": {
+        "oval": "타원형",
+        "round": "원형",
+        "square": "사각형",
+        "heart": "역삼각형",
+        "oblong": "긴사각형",
+        "diamond": "다이아몬드형",
+        "triangle": "삼각형",
+        "pickTitle": "얼굴형을 선택해주세요"
+      },
+      "attr": {
+        "preferenceLabel": "스타일 선호도",
+        "preferenceFeminine": "우아한",
+        "preferenceMasculine": "세련된",
+        "preferenceNeutral": "중성적",
+        "lengthLabel": "원하는 길이",
+        "lengthShort": "짧음",
+        "lengthMedium": "중간",
+        "lengthLong": "김",
+        "any": "상관없음",
+        "hairTypeLabel": "머릿결 타입",
+        "hairTypeStraight": "직모",
+        "hairTypeWavy": "웨이브",
+        "hairTypeCurly": "곱슬머리",
+        "hairTypeCoily": "컬",
+        "occasionLabel": "용도",
+        "occasionDaily": "일상",
+        "occasionBusiness": "직장",
+        "occasionEvent": "행사",
+        "occasionSeasonal": "계절 변화"
+      },
+      "cta": {
+        "get": "추천 받기",
+        "finding": "스타일 찾는 중..."
+      },
+      "analysis": {
+        "matchSuffix": "일치율",
+        "lowConfidence": "정확도가 낮으면 직접 선택해주세요",
+        "pickManually": "직접 선택하기",
+        "featuresLabel": "특징"
+      },
+      "result": {
+        "tipsLabel": "스타일링 팁",
+        "regenerate": "다시 추천받기",
+        "copySummary": "요약 복사",
+        "copied": "복사되었습니다",
+        "share": "공유하기",
+        "reset": "처음부터",
+        "empty": "추천할 스타일이 없습니다"
+      },
+      "error": {
+        "validation": "요청이 올바르지 않습니다. 다시 시도해주세요.",
+        "tooLarge": "이미지가 너무 큽니다. 5MB 이하를 사용해주세요.",
+        "invalidImage": "지원하지 않는 이미지 형식입니다.",
+        "noFace": "사진에서 얼굴을 인식하지 못했습니다. 더 명확한 정면 사진을 사용하거나 직접 선택해주세요.",
+        "rateLimited": "요청이 많습니다. 잠시 후 다시 시도해주세요.",
+        "aiUnavailable": "AI 서비스가 일시적으로 이용할 수 없습니다.",
+        "offline": "인터넷 연결을 확인해주세요.",
+        "generic": "오류가 발생했습니다. 다시 시도해주세요."
+      },
+      "intro": {
+        "heading": "AI와 함께 나에게 잘 어울리는 헤어스타일을 찾아보세요",
+        "body": "사진을 업로드하거나 얼굴형을 선택한 후 취향과 머릿결 타입을 입력하면, AI가 당신의 얼굴형에 가장 잘 어울리는 헤어스타일을 추천해드립니다. 각 추천에는 스타일링 팁과 참고 이미지가 함께 제공됩니다."
+      },
+      "faq": {
+        "q1": "사진이 저장되나요?",
+        "a1": "아니요, 사진은 분석되고 즉시 삭제됩니다. 저장되거나 로깅되지 않습니다.",
+        "q2": "어떤 얼굴형이 있나요?",
+        "a2": "7가지 얼굴형을 지원합니다: 타원형, 원형, 사각형, 역삼각형, 긴사각형, 다이아몬드형, 삼각형. 각각에 최적의 스타일이 있습니다.",
+        "q3": "추천을 다시 받을 수 있나요?",
+        "a3": "네, '다시 추천받기' 버튼으로 같은 설정에서 다른 스타일들을 추천받을 수 있습니다."
+      },
+      "howto": {
+        "step1": "사진을 업로드하거나 얼굴형을 선택해주세요",
+        "step2": "취향, 길이, 머릿결, 용도를 입력하세요",
+        "step3": "당신의 얼굴형에 맞는 헤어스타일을 받아보세요"
+      }
     }
   }
 }

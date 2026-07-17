@@ -19,7 +19,7 @@ export const tools: ToolMeta[] = [
     slug: 'hairstyle-recommendation',
     category: 'beauty',
     icon: 'Scissors',
-    status: 'coming_soon',
+    status: 'live',
     addedAt: '2026-07-01',
     isPopular: true,
     order: 10,
