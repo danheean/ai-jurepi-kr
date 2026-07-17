@@ -6,11 +6,7 @@
  * Route handlers and UI never import directly; they use HairstyleAI.
  */
 
-import {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import type {
   FaceAnalysis,
@@ -35,7 +31,9 @@ import {
  */
 export class GeminiProvider implements HairstyleAI {
   private client: GoogleGenerativeAI;
-  private model = 'gemini-2.5-flash';
+  // `gemini-flash-latest` is a stable alias that tracks the current Flash model
+  // (vision + JSON output) and avoids pinned names going 404. Override via GEMINI_MODEL.
+  private model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
   constructor(apiKey: string) {
     if (!apiKey) {
@@ -81,12 +79,6 @@ export class GeminiProvider implements HairstyleAI {
           temperature: 0.3, // Low temperature for consistent analysis
           responseMimeType: 'application/json',
         },
-        safetySettings: [
-          {
-            category: HarmCategory.HARM_CATEGORY_UNSPECIFIED,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-          },
-        ],
       };
 
       let response = await model.generateContent(request);
@@ -153,12 +145,6 @@ export class GeminiProvider implements HairstyleAI {
           temperature: 0.6, // Moderate temperature for variety in recommendations
           responseMimeType: 'application/json',
         },
-        safetySettings: [
-          {
-            category: HarmCategory.HARM_CATEGORY_UNSPECIFIED,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-          },
-        ],
       };
 
       let response = await model.generateContent(request);
