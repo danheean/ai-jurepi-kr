@@ -111,6 +111,54 @@ export type ProviderRecommendation = z.infer<
 >;
 
 /**
+ * Leniently coerce a raw provider payload into validated recommendations.
+ *
+ * Providers may return a bare array, a `{ recommendations: [...] }` wrapper,
+ * or a single object; items may over-run the length caps. Per the guardrail
+ * spec, string lengths are CLAMPED (not rejected) and malformed or
+ * hallucinated items are dropped silently — the route backfills below
+ * MIN_RECS. Pure function (no side effects, immutable input).
+ */
+export function coerceProviderRecommendations(
+  raw: unknown,
+  candidateIds: readonly string[]
+): ProviderRecommendation[] {
+  const items: unknown[] = Array.isArray(raw)
+    ? raw
+    : raw &&
+        typeof raw === 'object' &&
+        Array.isArray((raw as { recommendations?: unknown[] }).recommendations)
+      ? (raw as { recommendations: unknown[] }).recommendations
+      : [raw];
+
+  const valid: ProviderRecommendation[] = [];
+
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    const rec = item as Record<string, unknown>;
+
+    const clamped = {
+      ...rec,
+      reason:
+        typeof rec.reason === 'string' ? rec.reason.slice(0, 280) : rec.reason,
+      tips: Array.isArray(rec.tips)
+        ? rec.tips
+            .slice(0, 3)
+            .map((t) => (typeof t === 'string' ? t.slice(0, 120) : t))
+        : rec.tips,
+    };
+
+    const parsed = ProviderRecommendationSchema.safeParse(clamped);
+    if (!parsed.success) continue;
+    if (!candidateIds.includes(parsed.data.hairstyleId)) continue;
+
+    valid.push(parsed.data);
+  }
+
+  return valid;
+}
+
+/**
  * ============================================================================
  * API REQUEST SCHEMAS
  * ============================================================================

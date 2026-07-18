@@ -172,23 +172,37 @@ describe('GeminiProvider', () => {
     });
 
     it('handles single recommendation response and wraps it', async () => {
-      // First attempt fails with array validation error
-      mockGenerateJson
-        .mockRejectedValueOnce(
-          new AiError('VALIDATION_ERROR', 'Array validation failed')
-        )
-        .mockResolvedValueOnce({
-          hairstyleId: 'bob-classic',
-          reason: 'Classic bob.',
-          tips: ['Wash regularly'],
-        });
+      // Model returned a single object instead of an array — coercer wraps it
+      mockGenerateJson.mockResolvedValueOnce({
+        hairstyleId: 'bob-classic',
+        reason: 'Classic bob.',
+        tips: ['Wash regularly'],
+      });
 
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
       expect(result).toHaveLength(1);
       expect(result[0].hairstyleId).toBe('bob-classic');
-      expect(mockGenerateJson).toHaveBeenCalledTimes(2);
+      expect(mockGenerateJson).toHaveBeenCalledTimes(1);
+    });
+
+    it('unwraps a { recommendations: [...] } wrapper object', async () => {
+      mockGenerateJson.mockResolvedValueOnce({
+        recommendations: [
+          {
+            hairstyleId: 'bob-classic',
+            reason: 'Classic bob.',
+            tips: ['Wash regularly'],
+          },
+        ],
+      });
+
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].hairstyleId).toBe('bob-classic');
     });
 
     it('filters out hallucinated hairstyleIds', async () => {
@@ -240,11 +254,11 @@ describe('GeminiProvider', () => {
       expect(result[0].tips).toHaveLength(3);
     });
 
-    it('throws AiError if recommendation violates constraints', async () => {
+    it('clamps an over-length reason instead of failing the request', async () => {
       const recs = [
         {
           hairstyleId: 'bob-classic',
-          reason: 'A'.repeat(300), // Exceeds max(280)
+          reason: 'A'.repeat(300), // Exceeds max(280) — guardrail caps, not rejects
           tips: ['Tip 1'],
         },
       ];
@@ -252,9 +266,10 @@ describe('GeminiProvider', () => {
       mockGenerateJson.mockResolvedValueOnce(recs);
 
       const provider = new GeminiProvider();
-      await expect(
-        provider.recommend(input, candidates)
-      ).rejects.toThrow(AiError);
+      const result = await provider.recommend(input, candidates);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].reason).toHaveLength(280);
     });
 
     it('skips invalid recommendations silently', async () => {

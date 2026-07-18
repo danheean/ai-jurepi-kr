@@ -17,7 +17,7 @@ import type {
 import { buildAnalyzePrompt, buildRecommendPrompt } from '../prompt';
 import {
   FaceAnalysisSchema,
-  ProviderRecommendationSchema,
+  coerceProviderRecommendations,
 } from '../schema';
 import { AiError } from '../../ai/types';
 import { GeminiClient } from '../../ai/gemini';
@@ -80,73 +80,19 @@ export class GeminiProvider implements HairstyleAI {
     try {
       const prompt = buildRecommendPrompt(input, candidates, input.locale);
 
-      // Get array of recommendations from the model
-      // The schema expects an array, so we wrap single responses
-      const arraySchema = z.array(ProviderRecommendationSchema);
+      // Accept whatever JSON the model produced; the domain coercer tolerates
+      // bare arrays, `{ recommendations }` wrappers, and single objects, clamps
+      // length overruns, and drops malformed/hallucinated items (route backfills)
+      const raw = await this.client.generateJson({
+        prompt,
+        schema: z.unknown(),
+        maxRetries: 1,
+      });
 
-      let recommendations: ProviderRecommendation[];
-
-      try {
-        recommendations = await this.client.generateJson({
-          prompt,
-          schema: arraySchema,
-          maxRetries: 1,
-        });
-      } catch (error) {
-        // If parsing as array fails, try parsing as single object and wrap it
-        if (error instanceof AiError && error.code === 'VALIDATION_ERROR') {
-          const singleSchema = ProviderRecommendationSchema;
-          const single = await this.client.generateJson({
-            prompt,
-            schema: singleSchema,
-            maxRetries: 0, // No retry for fallback
-          });
-          recommendations = [single];
-        } else {
-          throw error;
-        }
-      }
-
-      // Validate and filter recommendations
-      const validRecs: ProviderRecommendation[] = [];
-      const candidateIds = candidates.map((c) => c.id);
-
-      for (const rec of recommendations) {
-        try {
-          // Clamp tips BEFORE validation to handle model over-generation
-          if (rec && Array.isArray(rec.tips) && rec.tips.length > 3) {
-            rec.tips = rec.tips.slice(0, 3);
-          }
-
-          // Validate constraints
-          const validated = ProviderRecommendationSchema.parse(rec);
-
-          // Guardrail: only allow hairstyleIds that exist in candidates
-          if (!candidateIds.includes(validated.hairstyleId)) {
-            continue; // Skip hallucinated IDs silently
-          }
-
-          validRecs.push(validated);
-        } catch (error) {
-          // If it's a zod validation error from constraint violations (not missing fields),
-          // throw to alert that the model is returning invalid data
-          if (error instanceof z.ZodError) {
-            const hasConstraintViolations = error.issues.some(
-              (issue) => issue.code === 'too_big' || issue.code === 'too_small'
-            );
-            if (hasConstraintViolations) {
-              throw new AiError(
-                'AI_UNAVAILABLE',
-                `Model returned recommendations violating constraints: ${error.message}`
-              );
-            }
-          }
-          // For other validation errors (missing fields, type errors), skip silently
-          continue;
-        }
-      }
-
-      return validRecs;
+      return coerceProviderRecommendations(
+        raw,
+        candidates.map((c) => c.id)
+      );
     } catch (error) {
       if (error instanceof AiError) {
         throw error;
