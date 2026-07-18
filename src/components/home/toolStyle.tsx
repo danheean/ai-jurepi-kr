@@ -1,5 +1,6 @@
 'use client';
 
+import type { AccentColor } from '@/tools/types';
 import type { LucideIcon } from 'lucide-react';
 import {
   Binary,
@@ -28,6 +29,40 @@ import {
   Zap,
   Wrench,
 } from 'lucide-react';
+
+/**
+ * Map accent color to Tailwind bg + text classes for icon tiles.
+ */
+export function accentTileClass(accent: AccentColor): {
+  bg: string;
+  text: string;
+} {
+  const map: Record<AccentColor, { bg: string; text: string }> = {
+    coral: { bg: 'bg-accent-coral-soft', text: 'text-accent-coral' },
+    mint: { bg: 'bg-accent-mint-soft', text: 'text-accent-mint' },
+    sky: { bg: 'bg-accent-sky-soft', text: 'text-accent-sky' },
+    sun: { bg: 'bg-accent-sun-soft', text: 'text-accent-sun' },
+    grape: { bg: 'bg-accent-grape-soft', text: 'text-accent-grape' },
+    rose: { bg: 'bg-accent-rose-soft', text: 'text-accent-rose' },
+  };
+  return map[accent];
+}
+
+/**
+ * Map accent color to the Tailwind text class for a tool-page eyebrow label.
+ * Uses the darker `-ink` variant for AA contrast on light surfaces.
+ */
+export function accentEyebrowClass(accent: AccentColor): string {
+  const map: Record<AccentColor, string> = {
+    coral: 'text-accent-coral-ink',
+    mint: 'text-accent-mint-ink',
+    sky: 'text-accent-sky-ink',
+    sun: 'text-accent-sun-ink',
+    grape: 'text-accent-grape-ink',
+    rose: 'text-accent-rose-ink',
+  };
+  return map[accent];
+}
 
 /**
  * Lucide icon name → component. Explicit map (tree-shake friendly) covering

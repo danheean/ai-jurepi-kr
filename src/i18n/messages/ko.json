@@ -10,7 +10,8 @@
     "about": "소개",
     "privacy": "개인정보",
     "terms": "이용약관",
-    "contact": "문의"
+    "contact": "문의",
+    "freeTools": "무료 도구"
   },
   "home": {
     "meta": {
@@ -18,16 +19,42 @@
       "description": "하나의 플랫폼에서 만나는 AI 기반 온라인 도구들. 헤어스타일 추천부터 다양한 AI 도구를 무료로 이용하세요."
     },
     "eyebrow": "✨ 무료 AI 도구",
-    "title": "일상에 필요한 도구를 한곳에",
+    "title": "일상에 필요한 AI 도구를 한곳에",
     "subtitle": "하나의 플랫폼에서 만나는 AI 기반 온라인 도구들",
-    "ctaButton": "도구 요청하기",
+    "ctaButton": "AI 도구 요청하기",
     "contactEmail": "hello@jurepi.kr",
     "requestSubject": "ai.jurepi.kr - 도구 요청",
     "mascotPlaceholder": "마스코트",
     "searchPlaceholder": "도구 검색...",
     "noResults": "검색 결과가 없습니다",
     "resetSearch": "검색 초기화",
-    "comingSoon": "준비 중"
+    "comingSoon": "준비 중",
+    "favorites": {
+      "filterLabel": "즐겨찾기",
+      "filterAria": "즐겨찾기 필터",
+      "addAria": "{name} 즐겨찾기 추가",
+      "removeAria": "{name} 즐겨찾기 해제",
+      "emptyHeading": "아직 즐겨찾기가 없어요",
+      "emptyBody": "카드의 하트를 눌러 즐겨찾기를 추가하세요.",
+      "showAll": "모두 보기"
+    }
+  },
+  "share": {
+    "heading": "공유하기",
+    "targets": {
+      "naver": "네이버로 공유 (블로그·카페)",
+      "x": "X(트위터)로 공유",
+      "facebook": "페이스북으로 공유",
+      "threads": "쓰레드로 공유",
+      "telegram": "텔레그램으로 공유",
+      "whatsapp": "왓츠앱으로 공유"
+    },
+    "copyLink": "링크 복사",
+    "copied": "링크를 복사했습니다!",
+    "native": "다른 앱으로 공유 (인스타그램·카카오톡 등)"
+  },
+  "toolPage": {
+    "characterAlt": "Jurepi 캐릭터"
   },
   "footer": {
     "copyright": "© 2026 ai.jurepi.kr",

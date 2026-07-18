@@ -6,18 +6,19 @@
  * - Sitemap generation
  * - SSG static params (live tools only)
  * - SEO metadata
+ * - Per-tool accent color identity (on icon tiles, category filters, badges)
  *
- * Current: hairstyle-recommendation as coming_soon placeholder (not yet built).
  * Tools become 'live' only when their module + route are implemented.
  */
 
-import type { ToolMeta } from './types';
+import type { ToolMeta, AccentColor, ToolCategory } from './types';
 
 export const tools: ToolMeta[] = [
   {
     id: 'hairstyle-recommendation',
     slug: 'hairstyle-recommendation',
     category: 'beauty',
+    accent: 'rose',
     icon: 'Scissors',
     status: 'live',
     addedAt: '2026-07-01',
@@ -35,6 +36,24 @@ export const tools: ToolMeta[] = [
     ],
   },
 ];
+
+/**
+ * Map category to its accent color per DESIGN.md
+ */
+export function categoryAccent(category: ToolCategory): AccentColor {
+  const accentMap: Record<ToolCategory, AccentColor> = {
+    beauty: 'rose',
+    text: 'mint',
+    dev: 'grape',
+    random: 'coral',
+    converter: 'sky',
+    calculator: 'sun',
+    fun: 'coral',
+    mindset: 'grape',
+    news: 'coral',
+  };
+  return accentMap[category];
+}
 
 /**
  * Live tools only (for SSG static params and sitemap)

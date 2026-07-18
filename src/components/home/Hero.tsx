@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ToolCharacter } from '@/components/tools/ToolCharacter';
 
 /**
  * Hero: eyebrow, headline, subhead, CTA button, mascot.
@@ -11,6 +11,8 @@ import { useTranslations } from 'next-intl';
  * because a flex item's min-content width for `word-break:normal` Korean is a
  * single glyph. `break-keep` (word-break: keep-all) also wraps Korean at word
  * boundaries rather than mid-word.
+ *
+ * Decorative blobs positioned absolutely behind content for atmosphere.
  */
 export function Hero() {
   const t = useTranslations('home');
@@ -18,8 +20,43 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="bg-surface-soft px-lg py-section"
+      className="relative overflow-hidden bg-surface-soft px-lg py-section"
     >
+      {/* Decorative blobs (behind content) */}
+      <div
+        className="pointer-events-none absolute -z-10 rounded-full blur-2xl opacity-10"
+        style={{
+          width: '400px',
+          height: '400px',
+          top: '10%',
+          right: '5%',
+          backgroundColor: 'var(--accent-coral)',
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -z-10 rounded-full blur-2xl opacity-8"
+        style={{
+          width: '300px',
+          height: '300px',
+          bottom: '15%',
+          left: '0%',
+          backgroundColor: 'var(--accent-mint)',
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -z-10 rounded-full blur-2xl opacity-7"
+        style={{
+          width: '350px',
+          height: '350px',
+          top: '30%',
+          left: '10%',
+          backgroundColor: 'var(--accent-grape)',
+        }}
+        aria-hidden="true"
+      />
+
       <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-xl md:grid-cols-2 md:gap-section">
         {/* Left: Eyebrow, Headline, Subhead, CTA */}
         <div>
@@ -34,7 +71,7 @@ export function Hero() {
           {/* Headline */}
           <h1
             id="hero-heading"
-            className="mb-lg break-keep text-display-xl font-bold leading-tight text-ink"
+            className="mb-lg break-keep font-display text-display-xl font-bold leading-tight text-ink"
           >
             {t('title')}
           </h1>
@@ -53,13 +90,10 @@ export function Hero() {
           </a>
         </div>
 
-        {/* Right: Mascot */}
+        {/* Right: Tool Character */}
         <div className="hidden justify-center md:flex">
-          <Image
-            src="/jurepi-character.png"
-            alt=""
-            width={320}
-            height={320}
+          <ToolCharacter
+            slug="home"
             priority
             className="h-auto w-[280px] max-w-full"
           />
