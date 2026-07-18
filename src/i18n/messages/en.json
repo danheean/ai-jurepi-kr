@@ -59,7 +59,8 @@
     "native": "Share via another app (Instagram, KakaoTalk, …)"
   },
   "toolPage": {
-    "characterAlt": "Jurepi character"
+    "characterAlt": "Jurepi character",
+    "back": "← Back"
   },
   "footer": {
     "copyright": "© 2026 ai.jurepi.kr",
@@ -90,7 +91,8 @@
         "remove": "Remove",
         "analyzing": "Analyzing your face shape...",
         "errorType": "Unsupported image type. Use PNG, JPG, or WebP.",
-        "errorSize": "Image is too large. Use a file under 5 MB."
+        "errorSize": "Image is too large. Use a file under 5 MB.",
+        "choose": "Choose a photo"
       },
       "face": {
         "oval": "Oval",
@@ -150,13 +152,35 @@
         "rateLimited": "You're going a bit fast — please wait a moment.",
         "aiUnavailable": "Our style advisor is briefly unavailable. Please try again.",
         "offline": "You appear to be offline — check your connection and try again.",
-        "generic": "Something went wrong. Please try again."
+        "generic": "Something went wrong. Please try again.",
+        "imageGenDisabled": "Preview generation is unavailable"
       },
       "intro": {
+        "eyebrow": "Beauty tools",
         "heading": "Discover hairstyles that suit you with AI",
         "body": "Upload your photo or select your face shape, then refine a few preferences like style, length, hair type, and occasion. Our AI will recommend the best hairstyles for your face shape, complete with styling tips and reference images."
       },
+      "workspace": {
+        "myPhotoTitle": "My photo",
+        "replacePhoto": "Replace photo",
+        "removePhoto": "Remove",
+        "photoEmptyHint": "Your photo stays visible here after upload",
+        "readyHint": "Pick your options and press Get recommendations — results appear here"
+      },
+      "preview": {
+        "generating": "Generating AI preview…",
+        "generatedLabel": "AI generated",
+        "fallbackLabel": "Example image",
+        "altGenerated": "AI-generated preview of {name}"
+      },
+      "howto": {
+        "title": "How it works",
+        "step1": "Upload a photo or choose your face shape",
+        "step2": "Select your style preference, length, hair type, and occasion",
+        "step3": "Get hairstyle recommendations tailored to your face shape"
+      },
       "faq": {
+        "title": "Frequently Asked Questions",
         "q1": "Is my photo stored?",
         "a1": "No. Your photo is analyzed once and then immediately deleted. It's never stored or logged.",
         "q2": "What face shapes are supported?",
@@ -164,10 +188,8 @@
         "q3": "Can I get different recommendations?",
         "a3": "Yes. Use the Regenerate button to get fresh recommendations with the same settings."
       },
-      "howto": {
-        "step1": "Upload a photo or choose your face shape",
-        "step2": "Select your style preference, length, hair type, and occasion",
-        "step3": "Get hairstyle recommendations tailored to your face shape"
+      "footer": {
+        "contact": "Questions or feedback? Reach out to hello@jurepi.kr"
       }
     }
   }

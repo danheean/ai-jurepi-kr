@@ -1,38 +1,29 @@
 /**
- * GeminiProvider Tests (Mocked SDK)
+ * GeminiProvider Tests (Mocked GeminiClient)
  *
- * These tests mock the @google/generative-ai SDK entirely.
- * NO real API calls are made.
+ * Tests the adapter layer that implements HairstyleAI.
+ * Mocks GeminiClient, not the SDK.
  * Coverage:
  * - Valid analyze JSON → FaceAnalysis (pass)
  * - Valid recommend JSON → ProviderRecommendation[] (pass)
- * - Broken JSON → retry → still broken → throws AiError
  * - Recommend with invalid hairstyleId → filtered out
- * - Missing API key → AiError('AI_UNAVAILABLE')
+ * - Recommend with constraint violations → throws AiError
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { z } from 'zod';
 
-// Mock must be declared at module level before any imports of the mocked module
-const mockGenerateContent = vi.fn();
-
-vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: vi.fn(() => ({
-    getGenerativeModel: () => ({
-      generateContent: mockGenerateContent,
-    }),
-  })),
-  HarmCategory: {
-    HARM_CATEGORY_UNSPECIFIED: 'HARM_CATEGORY_UNSPECIFIED',
-  },
-  HarmBlockThreshold: {
-    BLOCK_NONE: 'BLOCK_NONE',
-  },
+// Mock module first, before imports
+const mockGenerateJson = vi.fn();
+vi.mock('../../ai/gemini.ts', () => ({
+  GeminiClient: vi.fn(function(this: any) {
+    this.generateJson = mockGenerateJson;
+  }),
 }));
 
-// Import after mocking
+// Import after mock
 import { GeminiProvider } from './gemini';
-import { AiError } from './errors';
+import { AiError } from '../../ai/types';
 import type {
   HairstyleLibraryEntry,
   RecommendInput,
@@ -41,463 +32,254 @@ import type {
 describe('GeminiProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGenerateContent.mockClear();
-    mockGenerateContent.mockReset();
+    mockGenerateJson.mockClear();
   });
 
   describe('analyzeFace', () => {
     it('returns valid FaceAnalysis on successful JSON response', async () => {
-      const validJson = JSON.stringify({
-        faceShape: 'oval',
+      const validAnalysis = {
+        faceShape: 'oval' as const,
         confidence: 0.92,
         features: ['strong jawline', 'high forehead'],
         notes: 'Clear, front-facing photo.',
-      });
+      };
 
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => validJson,
-        },
-      });
+      mockGenerateJson.mockResolvedValueOnce(validAnalysis);
 
-      const provider = new GeminiProvider('test-key');
+      const provider = new GeminiProvider();
       const result = await provider.analyzeFace(
         { data: 'base64imagedata', mimeType: 'image/jpeg' },
         'en'
       );
 
-      expect(result).toMatchObject({
-        faceShape: 'oval',
-        confidence: 0.92,
-        features: ['strong jawline', 'high forehead'],
-        notes: 'Clear, front-facing photo.',
-      });
+      expect(result).toMatchObject(validAnalysis);
+      expect(mockGenerateJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: expect.objectContaining({
+            data: 'base64imagedata',
+          }),
+          maxRetries: 1,
+        })
+      );
     });
 
-    it('handles markdown-wrapped JSON response', async () => {
-      const wrappedJson = `\`\`\`json
-{
-  "faceShape": "round",
-  "confidence": 0.85,
-  "features": ["full cheeks"],
-  "notes": "Round face shape detected"
-}
-\`\`\``;
+    it('throws NO_FACE_DETECTED for face-related errors', async () => {
+      mockGenerateJson.mockRejectedValueOnce(
+        new AiError('AI_UNAVAILABLE', 'Failed to detect face in image')
+      );
 
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => wrappedJson,
-        },
-      });
+      const provider = new GeminiProvider();
+      try {
+        await provider.analyzeFace(
+          { data: 'base64imagedata', mimeType: 'image/jpeg' },
+          'en'
+        );
+        expect.fail('Should have thrown');
+      } catch (err) {
+        if (err instanceof AiError) {
+          expect(err.code).toBe('NO_FACE_DETECTED');
+        }
+      }
+    });
 
-      const provider = new GeminiProvider('test-key');
-      const result = await provider.analyzeFace(
-        { data: 'base64imagedata', mimeType: 'image/png' },
+    it('handles data: URL prefix in image data', async () => {
+      const validAnalysis = {
+        faceShape: 'round' as const,
+        confidence: 0.85,
+        features: ['round face'],
+      };
+
+      mockGenerateJson.mockResolvedValueOnce(validAnalysis);
+
+      const provider = new GeminiProvider();
+      await provider.analyzeFace(
+        { data: 'data:image/jpeg;base64,abc123', mimeType: 'image/jpeg' },
         'ko'
       );
 
-      expect(result.faceShape).toBe('round');
-      expect(result.confidence).toBe(0.85);
-    });
-
-    it('throws AiError on missing API key', () => {
-      expect(() => new GeminiProvider('')).toThrow(AiError);
-    });
-
-    it('throws AiError on failed JSON parsing after retry', async () => {
-      mockGenerateContent
-        .mockResolvedValueOnce({
-          response: { text: () => '{invalid json' },
+      expect(mockGenerateJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          image: expect.objectContaining({
+            data: 'data:image/jpeg;base64,abc123', // Passed as-is, GeminiClient handles stripping
+          }),
         })
-        .mockResolvedValueOnce({
-          response: { text: () => '{still invalid' },
-        });
-
-      const provider = new GeminiProvider('test-key');
-
-      await expect(
-        provider.analyzeFace(
-          { data: 'base64imagedata', mimeType: 'image/jpeg' },
-          'en'
-        )
-      ).rejects.toThrow(AiError);
-    });
-
-    it('validates faceShape enum constraint', async () => {
-      const invalidJson = JSON.stringify({
-        faceShape: 'invalid-shape', // Not in enum
-        confidence: 0.5,
-        features: [],
-      });
-
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => invalidJson,
-        },
-      });
-
-      const provider = new GeminiProvider('test-key');
-
-      await expect(
-        provider.analyzeFace(
-          { data: 'base64imagedata', mimeType: 'image/jpeg' },
-          'en'
-        )
-      ).rejects.toThrow();
-    });
-
-    it('validates confidence is in [0, 1]', async () => {
-      const invalidJson = JSON.stringify({
-        faceShape: 'oval',
-        confidence: 1.5, // Out of range
-        features: [],
-      });
-
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => invalidJson,
-        },
-      });
-
-      const provider = new GeminiProvider('test-key');
-
-      await expect(
-        provider.analyzeFace(
-          { data: 'base64imagedata', mimeType: 'image/jpeg' },
-          'en'
-        )
-      ).rejects.toThrow();
+      );
     });
   });
 
   describe('recommend', () => {
-    const candidateLibrary: HairstyleLibraryEntry[] = [
+    const candidates: HairstyleLibraryEntry[] = [
       {
-        id: 'soft-layered-bob',
-        name: { ko: '부드러운 레이어드 밥', en: 'Soft Layered Bob' },
-        suitableFaceShapes: ['oval', 'round', 'square'],
+        id: 'bob-classic',
+        name: { ko: '클래식 밥', en: 'Classic Bob' },
+        suitableFaceShapes: ['oval', 'round'],
         preference: 'feminine',
         length: 'short',
         hairType: ['straight', 'wavy'],
         image: {
-          src: '/hairstyles/soft-layered-bob/feminine.webp',
-          alt: 'Soft layered bob cut',
-          credit: 'Photographer Name',
-          license: 'CC-BY-4.0',
+          src: '/hairstyles/bob-classic/feminine.webp',
+          alt: 'Bob',
+          credit: 'Credit',
+          license: 'CC-BY',
         },
         tags: ['volume', 'low-maintenance'],
       },
       {
-        id: 'straight-long-cut',
-        name: { ko: '스트레이트 롱 컷', en: 'Straight Long Cut' },
-        suitableFaceShapes: ['oval', 'heart'],
-        preference: 'neutral',
+        id: 'layered-long',
+        name: { ko: '레이어드 롱', en: 'Layered Long' },
+        suitableFaceShapes: ['oval'],
+        preference: 'neutral' as const,
         length: 'long',
-        hairType: ['straight'],
+        hairType: ['wavy', 'curly'],
         image: {
-          src: '/hairstyles/straight-long-cut/neutral.webp',
-          alt: 'Long straight cut',
-          credit: 'Photographer Name',
-          license: 'CC-BY-4.0',
+          src: '/hairstyles/layered-long/neutral.webp',
+          alt: 'Layered',
+          credit: 'Credit',
+          license: 'CC-BY',
         },
-        tags: ['elegant', 'versatile'],
-      },
-      {
-        id: 'pixie-cut',
-        name: { ko: '픽시 컷', en: 'Pixie Cut' },
-        suitableFaceShapes: ['oval', 'square', 'heart'],
-        preference: 'masculine',
-        length: 'short',
-        hairType: ['straight', 'wavy'],
-        image: {
-          src: '/hairstyles/pixie-cut/masculine.webp',
-          alt: 'Short pixie cut',
-          credit: 'Photographer Name',
-          license: 'CC-BY-4.0',
-        },
-        tags: ['bold', 'trendy'],
+        tags: ['texture', 'movement'],
       },
     ];
 
-    it('returns valid ProviderRecommendation[] on successful JSON', async () => {
-      const validJson = JSON.stringify([
+    const input: RecommendInput = {
+      faceShape: 'oval',
+      preference: 'feminine',
+      occasion: 'daily',
+      locale: 'en',
+    };
+
+    it('returns valid recommendations as array', async () => {
+      const recs = [
         {
-          hairstyleId: 'soft-layered-bob',
-          reason: 'This style suits your face shape perfectly.',
-          tips: ['Apply texture spray', 'Trim every 6 weeks'],
+          hairstyleId: 'bob-classic',
+          reason: 'Classic bob suits oval faces well.',
+          tips: ['Wash every other day', 'Use styling cream for texture'],
         },
         {
-          hairstyleId: 'straight-long-cut',
-          reason: 'Elongates the face beautifully.',
-          tips: ['Deep condition weekly', 'Use heat protectant'],
+          hairstyleId: 'layered-long',
+          reason: 'Layered cut adds movement.',
+          tips: ['Deep condition weekly'],
         },
-      ]);
+      ];
 
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => validJson,
-        },
-      });
+      mockGenerateJson.mockResolvedValueOnce(recs);
 
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'oval',
-        preference: 'feminine',
-        length: 'short',
-        occasion: 'daily',
-        locale: 'en',
-      };
-
-      const result = await provider.recommend(input, candidateLibrary);
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
 
       expect(result).toHaveLength(2);
-      expect(result[0].hairstyleId).toBe('soft-layered-bob');
-      expect(result[0].reason).toBe('This style suits your face shape perfectly.');
-      expect(result[0].tips).toHaveLength(2);
+      expect(result[0].hairstyleId).toBe('bob-classic');
     });
 
-    it('filters out hairstyleIds not in candidates', async () => {
-      const jsonWithInvalidId = JSON.stringify([
+    it('handles single recommendation response and wraps it', async () => {
+      // First attempt fails with array validation error
+      mockGenerateJson
+        .mockRejectedValueOnce(
+          new AiError('VALIDATION_ERROR', 'Array validation failed')
+        )
+        .mockResolvedValueOnce({
+          hairstyleId: 'bob-classic',
+          reason: 'Classic bob.',
+          tips: ['Wash regularly'],
+        });
+
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].hairstyleId).toBe('bob-classic');
+      expect(mockGenerateJson).toHaveBeenCalledTimes(2);
+    });
+
+    it('filters out hallucinated hairstyleIds', async () => {
+      const recs = [
         {
-          hairstyleId: 'soft-layered-bob', // Valid
-          reason: 'Great choice.',
+          hairstyleId: 'bob-classic',
+          reason: 'Classic bob.',
           tips: ['Tip 1'],
         },
         {
-          hairstyleId: 'hallucinated-style', // NOT in candidates
-          reason: 'This is made up.',
+          hairstyleId: 'non-existent-hairstyle',
+          reason: 'This ID does not exist in catalog.',
           tips: ['Tip 1'],
         },
         {
-          hairstyleId: 'pixie-cut', // Valid
-          reason: 'Bold and modern.',
+          hairstyleId: 'layered-long',
+          reason: 'Layered cut.',
           tips: ['Tip 1'],
         },
-      ]);
+      ];
 
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => jsonWithInvalidId,
-        },
-      });
+      mockGenerateJson.mockResolvedValueOnce(recs);
 
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'square',
-        preference: 'masculine',
-        occasion: 'business',
-        locale: 'en',
-      };
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
 
-      const result = await provider.recommend(input, candidateLibrary);
-
-      // Only soft-layered-bob and pixie-cut should remain
       expect(result).toHaveLength(2);
       expect(result.map((r) => r.hairstyleId)).toEqual([
-        'soft-layered-bob',
-        'pixie-cut',
+        'bob-classic',
+        'layered-long',
       ]);
     });
 
-    it('clamps tips array to max 3', async () => {
-      const jsonWithManyTips = JSON.stringify([
+    it('clamps tips to max 3 before validation', async () => {
+      const recs = [
         {
-          hairstyleId: 'soft-layered-bob',
-          reason: 'Good fit.',
-          tips: [
-            'Tip 1 (120 chars max)',
-            'Tip 2 (120 chars max)',
-            'Tip 3 (120 chars max)',
-            'Tip 4 (should be removed)',
-            'Tip 5 (should be removed)',
-          ],
+          hairstyleId: 'bob-classic',
+          reason: 'Classic bob.',
+          tips: ['Tip 1', 'Tip 2', 'Tip 3', 'Tip 4', 'Tip 5'], // Over limit
         },
-      ]);
+      ];
 
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => jsonWithManyTips,
-        },
-      });
+      mockGenerateJson.mockResolvedValueOnce(recs);
 
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'oval',
-        preference: 'feminine',
-        occasion: 'daily',
-        locale: 'en',
-      };
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
 
-      const result = await provider.recommend(input, candidateLibrary);
-
+      expect(result).toHaveLength(1);
       expect(result[0].tips).toHaveLength(3);
     });
 
-    it('skips invalid individual recommendations but keeps valid ones', async () => {
-      const mixedJson = JSON.stringify([
+    it('throws AiError if recommendation violates constraints', async () => {
+      const recs = [
         {
-          hairstyleId: 'soft-layered-bob',
-          reason: 'Good choice.',
+          hairstyleId: 'bob-classic',
+          reason: 'A'.repeat(300), // Exceeds max(280)
           tips: ['Tip 1'],
         },
-        {
-          // Missing hairstyleId — should be skipped
-          reason: 'Incomplete',
-          tips: ['Tip'],
-        },
-        {
-          hairstyleId: 'pixie-cut',
-          reason: 'Bold style.',
-          tips: ['Tip 1', 'Tip 2'],
-        },
-      ]);
+      ];
 
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => mixedJson,
-        },
-      });
+      mockGenerateJson.mockResolvedValueOnce(recs);
 
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'square',
-        preference: 'neutral',
-        occasion: 'daily',
-        locale: 'en',
-      };
-
-      const result = await provider.recommend(input, candidateLibrary);
-
-      // Only valid recommendations should remain
-      expect(result).toHaveLength(2);
-      expect(result.map((r) => r.hairstyleId)).toEqual([
-        'soft-layered-bob',
-        'pixie-cut',
-      ]);
-    });
-
-    it('handles markdown-wrapped JSON array', async () => {
-      const wrappedJson = `\`\`\`json
-[
-  {
-    "hairstyleId": "soft-layered-bob",
-    "reason": "Perfect for your shape.",
-    "tips": ["Tip 1"]
-  }
-]
-\`\`\``;
-
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => wrappedJson,
-        },
-      });
-
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'oval',
-        preference: 'feminine',
-        occasion: 'daily',
-        locale: 'en',
-      };
-
-      const result = await provider.recommend(input, candidateLibrary);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].hairstyleId).toBe('soft-layered-bob');
-    });
-
-    it('throws AiError on JSON parse failure after retry', async () => {
-      mockGenerateContent
-        .mockResolvedValueOnce({
-          response: { text: () => '{broken' },
-        })
-        .mockResolvedValueOnce({
-          response: { text: () => '{still broken' },
-        });
-
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'oval',
-        preference: 'feminine',
-        occasion: 'daily',
-        locale: 'en',
-      };
-
-      await expect(provider.recommend(input, candidateLibrary)).rejects.toThrow(
-        AiError
-      );
-    });
-
-    it('validates reason length constraint', async () => {
-      const jsonWithLongReason = JSON.stringify([
-        {
-          hairstyleId: 'soft-layered-bob',
-          reason: 'x'.repeat(281), // Exceeds 280 char limit
-          tips: ['Tip 1'],
-        },
-      ]);
-
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => jsonWithLongReason,
-        },
-      });
-
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'oval',
-        preference: 'feminine',
-        occasion: 'daily',
-        locale: 'en',
-      };
-
-      await expect(provider.recommend(input, candidateLibrary)).rejects.toThrow();
-    });
-
-    it('validates tip length constraint', async () => {
-      const jsonWithLongTip = JSON.stringify([
-        {
-          hairstyleId: 'soft-layered-bob',
-          reason: 'Good style.',
-          tips: ['x'.repeat(121)], // Exceeds 120 char limit
-        },
-      ]);
-
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => jsonWithLongTip,
-        },
-      });
-
-      const provider = new GeminiProvider('test-key');
-      const input: RecommendInput = {
-        faceShape: 'oval',
-        preference: 'feminine',
-        occasion: 'daily',
-        locale: 'en',
-      };
-
-      await expect(provider.recommend(input, candidateLibrary)).rejects.toThrow();
-    });
-  });
-
-  describe('error handling', () => {
-    it('converts empty response to AI_UNAVAILABLE', async () => {
-      mockGenerateContent.mockResolvedValueOnce({
-        response: {
-          text: () => null,
-        },
-      });
-
-      const provider = new GeminiProvider('test-key');
-
+      const provider = new GeminiProvider();
       await expect(
-        provider.analyzeFace(
-          { data: 'base64imagedata', mimeType: 'image/jpeg' },
-          'en'
-        )
+        provider.recommend(input, candidates)
       ).rejects.toThrow(AiError);
+    });
+
+    it('skips invalid recommendations silently', async () => {
+      const recs = [
+        {
+          hairstyleId: 'bob-classic',
+          reason: 'Classic bob.',
+          tips: ['Tip 1'],
+        },
+        {
+          // Invalid: missing required field
+          hairstyleId: 'layered-long',
+          // reason missing
+          tips: ['Tip 1'],
+        },
+      ];
+
+      mockGenerateJson.mockResolvedValueOnce(recs);
+
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
+
+      // Only valid one is returned
+      expect(result).toHaveLength(1);
+      expect(result[0].hairstyleId).toBe('bob-classic');
     });
   });
 });

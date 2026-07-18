@@ -20,6 +20,11 @@ export {
   MAX_RECS,
   RATE_LIMIT_ANALYZE_PER_MIN,
   RATE_LIMIT_RECOMMEND_PER_MIN,
+  PREVIEW_RATE_LIMIT_PER_MIN,
+  PREVIEW_IMAGE_WIDTH,
+  PREVIEW_IMAGE_HEIGHT,
+  PREVIEW_CONCURRENCY,
+  PREVIEW_TIMEOUT_MS,
   type FaceShape,
   type Preference,
   type Length,
@@ -53,6 +58,8 @@ export {
   ProviderRecommendationSchema,
   AnalyzeRequestSchema,
   RecommendRequestSchema,
+  PreviewRequestSchema,
+  PreviewResponseSchema,
   parseAnalyzeRequest,
   parseRecommendRequest,
   validateProviderRecommendations,
@@ -63,6 +70,8 @@ export {
   type ProviderRecommendation as ProviderRecommendationFromSchema,
   type AnalyzeRequest,
   type RecommendRequest,
+  type PreviewRequest,
+  type PreviewResponse,
 } from './schema';
 
 // Catalog
@@ -75,4 +84,16 @@ export {
 } from './catalog';
 
 // Prompts
-export { buildAnalyzePrompt, buildRecommendPrompt } from './prompt';
+export { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt } from './prompt';
+
+// Flow State Machine (domain pure reducer)
+export {
+  flowReducer,
+  initialFlowState,
+  selectNextPreviewTarget,
+  type FlowState,
+  type FlowAction,
+  type FlowStage,
+  type Photo,
+  type PreviewState,
+} from './flow';

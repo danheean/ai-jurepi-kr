@@ -1,9 +1,8 @@
 /**
- * Gemini Hairstyle Provider Adapter
+ * Ollama Hairstyle Provider Adapter
  *
- * Thin adapter that uses GeminiClient (from lib/ai) and applies domain-specific logic.
- * Prompts, filtering, and validation are hairstyle-specific.
- * Low-level SDK interaction is isolated to lib/ai/gemini.ts.
+ * Thin adapter that uses OllamaClient (from lib/ai) and applies domain-specific logic.
+ * Implements the HairstyleAI port interface with Ollama backend.
  */
 
 import { z } from 'zod';
@@ -20,20 +19,20 @@ import {
   ProviderRecommendationSchema,
 } from '../schema';
 import { AiError } from '../../ai/types';
-import { GeminiClient } from '../../ai/gemini';
+import { OllamaClient } from '../../ai/ollama';
 
 /**
- * GeminiProvider implements the HairstyleAI port interface.
- * Uses GeminiClient for structured JSON generation.
+ * OllamaProvider implements the HairstyleAI port interface using Ollama.
+ * Uses OllamaClient for structured JSON generation via /api/chat endpoint.
  *
- * @throws AiError with code 'AI_UNAVAILABLE' if key is missing or API calls fail
- * @throws AiError with code 'NO_FACE_DETECTED' if analysis fails validation
+ * @throws AiError with code 'AI_UNAVAILABLE' if Ollama is unreachable or API calls fail
+ * @throws AiError with code 'NO_FACE_DETECTED' if vision analysis fails
  */
-export class GeminiProvider implements HairstyleAI {
-  private client: GeminiClient;
+export class OllamaProvider implements HairstyleAI {
+  private client: OllamaClient;
 
-  constructor(client?: GeminiClient) {
-    this.client = client || new GeminiClient();
+  constructor(client?: OllamaClient) {
+    this.client = client || new OllamaClient();
   }
 
   async analyzeFace(
@@ -59,16 +58,19 @@ export class GeminiProvider implements HairstyleAI {
       return analysis;
     } catch (error) {
       if (error instanceof AiError) {
-        // If it looks like an image processing issue, map to NO_FACE_DETECTED
-        if (error.message.toLowerCase().includes('face')) {
-          throw new AiError('NO_FACE_DETECTED', error.message);
+        // Map validation errors to NO_FACE_DETECTED for image-related failures
+        if (error.code === 'VALIDATION_ERROR') {
+          throw new AiError(
+            'NO_FACE_DETECTED',
+            'Failed to analyze face from image'
+          );
         }
         throw error;
       }
 
       throw new AiError(
         'AI_UNAVAILABLE',
-        `Gemini provider error: ${error instanceof Error ? error.message : 'unknown'}`
+        `Ollama provider error: ${error instanceof Error ? error.message : 'unknown'}`
       );
     }
   }
@@ -81,7 +83,6 @@ export class GeminiProvider implements HairstyleAI {
       const prompt = buildRecommendPrompt(input, candidates, input.locale);
 
       // Get array of recommendations from the model
-      // The schema expects an array, so we wrap single responses
       const arraySchema = z.array(ProviderRecommendationSchema);
 
       let recommendations: ProviderRecommendation[];
@@ -99,7 +100,7 @@ export class GeminiProvider implements HairstyleAI {
           const single = await this.client.generateJson({
             prompt,
             schema: singleSchema,
-            maxRetries: 0, // No retry for fallback
+            maxRetries: 0,
           });
           recommendations = [single];
         } else {
@@ -128,7 +129,7 @@ export class GeminiProvider implements HairstyleAI {
 
           validRecs.push(validated);
         } catch (error) {
-          // If it's a zod validation error from constraint violations (not missing fields),
+          // If it's a zod validation error from constraint violations,
           // throw to alert that the model is returning invalid data
           if (error instanceof z.ZodError) {
             const hasConstraintViolations = error.issues.some(
@@ -154,7 +155,7 @@ export class GeminiProvider implements HairstyleAI {
 
       throw new AiError(
         'AI_UNAVAILABLE',
-        `Gemini provider error: ${error instanceof Error ? error.message : 'unknown'}`
+        `Ollama provider error: ${error instanceof Error ? error.message : 'unknown'}`
       );
     }
   }

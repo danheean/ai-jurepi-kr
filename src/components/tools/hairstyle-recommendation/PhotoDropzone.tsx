@@ -8,7 +8,12 @@ import { resizeImage } from '@/lib/hairstyle-recommendation/resize';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/hairstyle-recommendation';
 
 interface PhotoDropzoneProps {
-  onFileSelected: (file: File, dataUrl: string, mimeType: string) => void;
+  onFileSelected: (
+    file: File,
+    dataUrl: string,
+    mimeType: 'image/png' | 'image/jpeg' | 'image/webp',
+    objectUrl: string
+  ) => void;
 }
 
 export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
@@ -47,9 +52,15 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
 
       try {
         const result = await resizeImage(file);
+        const objectUrl = URL.createObjectURL(file);
         setFileName(file.name);
         setPreview(result.dataUrl);
-        onFileSelected(file, result.dataUrl, result.mimeType);
+        onFileSelected(
+          file,
+          result.dataUrl,
+          result.mimeType as 'image/png' | 'image/jpeg' | 'image/webp',
+          objectUrl
+        );
       } catch (err) {
         const msg = err instanceof Error ? err.message : t('error.generic');
         setError(msg);
@@ -108,12 +119,13 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onClick={!preview && !isResizing ? handleTapChoose : undefined}
         className={`relative rounded-md border-2 border-dashed p-8 text-center transition-all duration-150 ${
           isDragOver
             ? 'border-primary bg-surface-card'
             : preview
               ? 'border-hairline bg-surface-card'
-              : 'border-hairline bg-canvas hover:border-primary'
+              : 'border-hairline bg-canvas hover:border-primary cursor-pointer'
         }`}
       >
         <input
@@ -135,7 +147,10 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
               {t('upload.hint')}
             </p>
             <button
-              onClick={handleTapChoose}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTapChoose();
+              }}
               disabled={isResizing}
               className="mt-4 px-4 py-2 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash"
             >
@@ -145,7 +160,7 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
                   {t('upload.analyzing')}
                 </>
               ) : (
-                t('upload.remove') // Reuse for "Choose"
+                t('upload.choose')
               )}
             </button>
           </>
@@ -168,7 +183,10 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
               {fileName}
             </p>
             <button
-              onClick={handleClear}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClear();
+              }}
               disabled={isResizing}
               className="text-sm text-ink-soft hover:text-ink underline disabled:text-ash"
             >

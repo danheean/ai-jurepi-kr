@@ -97,8 +97,14 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
     <ai_abstraction>
       - **Port Interface Pattern:** Each AI capability is a domain interface (e.g., HairstyleAI). Implementations (providers) inherit or implement the interface.
       - Factory: src/lib/[tool]/ai/index.ts exports getProvider() which selects by AI_PROVIDER env var.
-      - Example: HairstyleAI (port) ← GeminiProvider, ClaudeProvider (adapters) — route handlers call getProvider().HairstyleAI.analyzeFace(...), UI unchanged.
+      - Example: HairstyleAI (port) ← GeminiProvider, OllamaProvider (adapters) — route handlers call getProvider().analyzeFace(...), UI unchanged.
       - No provider SDK is imported outside its provider file; all AI logic is isolated and swappable.
+      - **Platform capability layer (src/lib/ai/, added 2026-07-18):** shared, tool-agnostic provider clients that tool adapters compose. Every tool on this hub is AI-backed, so frontier and open-source models must stay swappable behind common ports:
+        - `StructuredModel.generateJson<T>({ prompt, image?, schema, maxRetries? })` — structured text/vision JSON generation, zod-validated via shared guardrails (markdown-fence stripping + 1 retry).
+        - `ImageGenerator.generateImage({ prompt, width?, height?, seed?, referenceImage? })` + readonly `supportsImageEdit` — text→image generation; `referenceImage` is the Phase-2 try-on seam (unused in v1).
+        - Providers: `GeminiClient` (frontier, @google/generative-ai SDK) and `OllamaClient` (open-source, plain fetch → `{OLLAMA_BASE_URL}/api/chat` with JSON-schema format + `{OLLAMA_BASE_URL}/v1/images/generations` OpenAI-compatible).
+        - Factories: `getStructuredModel()` selects by AI_PROVIDER (gemini|ollama); `getImageGenerator()` selects by IMAGE_PROVIDER (ollama | unset→null = image generation disabled; callers must degrade gracefully to curated imagery).
+        - Dev default: Ollama on the developer laptop (zero API cost). Production: AI_PROVIDER=gemini, IMAGE_PROVIDER unset — image generation stays off in production until a production image provider is chosen (deferred decision).
     </ai_abstraction>
     <environment_secrets>
       - Server-only: GEMINI_API_KEY, CLAUDE_API_KEY, etc. (NEVER NEXT_PUBLIC_*).
@@ -118,7 +124,7 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
         ```typescript
         { ok: true, data: T, error: null } | { ok: false, data: null, error: { code: string, message: string } }
         ```
-      - Error codes: VALIDATION_ERROR, IMAGE_TOO_LARGE, INVALID_IMAGE, NO_FACE_DETECTED, RATE_LIMITED, AI_UNAVAILABLE, INTERNAL, etc.
+      - Error codes: VALIDATION_ERROR, IMAGE_TOO_LARGE, INVALID_IMAGE, NO_FACE_DETECTED, RATE_LIMITED, AI_UNAVAILABLE, IMAGE_GEN_DISABLED (503 — image generation off; clients fall back quietly to curated imagery), INTERNAL, etc.
       - Validation: server-side only, using Zod. Client receives feedback via error envelope.
     </api_contract>
     <ephemeral_policy>
@@ -199,7 +205,7 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
       <required>false</required>
       <default>gemini</default>
       <example>gemini</example>
-      <note>Enum: gemini, claude, etc. (extend as providers are added). NOT public.</note>
+      <note>Enum: gemini, ollama, claude, etc. (extend as providers are added). NOT public. Dev convention: ollama (laptop inference, zero API cost).</note>
     </variable>
     <variable>
       <name>GEMINI_API_KEY</name>
@@ -213,6 +219,28 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
       <description>Anthropic Claude API key (server-only, future provider).</description>
       <required>conditionally</required>
       <note>Only required if AI_PROVIDER=claude. Same rotation + validation rules.</note>
+    </variable>
+    <variable>
+      <name>IMAGE_PROVIDER</name>
+      <description>Active image-generation provider for getImageGenerator() (server-only). Unset (or "none") = image generation disabled; features degrade gracefully to curated catalog imagery.</description>
+      <required>false</required>
+      <default>(unset — disabled)</default>
+      <example>ollama</example>
+      <note>Enum: ollama (dev). Production image provider is a deferred decision — deployed site keeps image generation off until one is chosen (e.g., Workers AI or a tunneled Ollama).</note>
+    </variable>
+    <variable>
+      <name>OLLAMA_BASE_URL</name>
+      <description>Base URL of the Ollama server used by OllamaClient.</description>
+      <required>false</required>
+      <default>http://localhost:11434</default>
+      <example>http://localhost:11434</example>
+    </variable>
+    <variable>
+      <name>OLLAMA_VISION_MODEL / OLLAMA_TEXT_MODEL / OLLAMA_IMAGE_MODEL</name>
+      <description>Ollama model tags per capability.</description>
+      <required>false</required>
+      <default>qwen3-vl:8b / qwen3.5:9b / x/z-image-turbo</default>
+      <note>Image generation requires `ollama pull x/z-image-turbo` (Ollama ≥0.32; experimental image generation, macOS first). x/flux2-klein is an alternative image model.</note>
     </variable>
     <variable>
       <name>[TOOL]_RATE_LIMIT_PER_MIN</name>
@@ -276,6 +304,14 @@ src/
 │   ├── utils.ts                    # cn(), search matcher, clamp, localization helpers
 │   ├── home-favorites.ts           # Favorites domain logic (pure functions): loadFavorites, saveFavorites, toggleFavorite, filterByFavorites
 │   ├── share.ts                    # Share targets: shareFacebook, shareX, shareNaver, shareThreads, shareTelegram, shareWhatsapp, copyLink, nativeShare
+│   │
+│   ├── ai/                         # ★ Platform AI capability layer (tool-agnostic, 2026-07-18)
+│   │   ├── types.ts                # StructuredModel + ImageGenerator ports, AiError (incl. IMAGE_GEN_DISABLED)
+│   │   ├── env.ts                  # readRuntimeEnv (Cloudflare context → process.env fallback) + config getters
+│   │   ├── guardrails.ts           # JSON extraction (fence strip) + zod validation + 1 retry
+│   │   ├── gemini.ts               # GeminiClient (frontier; @google/generative-ai)
+│   │   ├── ollama.ts               # OllamaClient (open-source; fetch → /api/chat, /v1/images/generations)
+│   │   └── factory.ts              # getStructuredModel() / getImageGenerator()
 │   │
 │   └── [tool-name]/
 │       ├── ai/
@@ -397,7 +433,7 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     
     type ErrorCode = 
       | 'VALIDATION_ERROR' | 'IMAGE_TOO_LARGE' | 'INVALID_IMAGE' 
-      | 'NO_FACE_DETECTED' | 'RATE_LIMITED' | 'AI_UNAVAILABLE' | 'INTERNAL';
+      | 'NO_FACE_DETECTED' | 'RATE_LIMITED' | 'AI_UNAVAILABLE' | 'IMAGE_GEN_DISABLED' | 'INTERNAL';
     ```
   </api_envelope>
 
@@ -478,7 +514,7 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
 </component_hierarchy>
 
 <pages_and_interfaces>
-  <container>Max width 1120px centered (or per-tool override); horizontal padding 24px (≥768px) / 16px (mobile). Vertical rhythm: 48–64px between sections, 16–20px within.</container>
+  <container>Home/marketing surfaces: max-w-screen-2xl. Tool detail pages: max-w-screen-xl (1280px) — the tool-page shell standard (2026-07-18). Horizontal padding 24px (≥768px) / 16px (mobile). Vertical rhythm: 48–64px between sections, 16–20px within.</container>
 
   <home_page>
     - Hero: centered, padding 64px/40px (desktop) / 40px/24px (mobile). Eyebrow + H1 (Gmarket Sans 700, clamp 32–56px) + subhead + SearchBar (56px tall, rounded, leading icon, placeholder "Search tools…") + optional ToolCharacter (home.webp, 1:1, responsive width).
@@ -490,10 +526,13 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   </home_page>
 
   <tool_page>
-    - Breadcrumb: Home > Category > Tool Name (localized, clickable).
-    - ToolCharacter: Per-tool 1:1 visual (slug.webp, e.g., hairstyle-recommendation.webp) displayed as decorative support, responsive width, 300×300px intrinsic.
-    - Tool Module: mounts the tool's Client Component (e.g., <HairstyleTool/>). Tool internals per its own SPEC; platform provides Error Boundary + loader context.
-    - ShareButtons: Mounted below tool result or in sticky footer. Same 6-platform + copy + native options.
+    **Tool page shell standard (2026-07-18 — aligned with apps.jurepi.kr tool pages, e.g. find-replace):**
+    - Container: wide — max-w-screen-xl (1280px), px-4 mobile / px-6 ≥768px, py-8/py-12. Tool workspaces need room; the old narrow prose column (max-w-3xl) is retired for tool pages.
+    - Top row: back link (left, ← home) + ShareButtons horizontal (right, "공유하기" label + 6 SNS + copy link + native share).
+    - ToolIntro header (shared component): ToolCharacter avatar (w-16 sm:w-[72px], rounded-2xl, shadow-card) beside a category eyebrow (text-xs bold uppercase tracking-widest, tool accent ink color) + H1 (font-display) + one-paragraph description (max-w-2xl).
+    - Workspace: the interactive tool module mounts IMMEDIATELY after ToolIntro (before how-to/FAQ) — users act first, read later.
+    - Below the workspace: how-to (numbered step list + sm:grid-cols-3 tip cards, border-t separated), FAQ (native details/summary), footer note. These stay SSR/prerendered (SEO/GEO) outside any client gate.
+    - Tool Module: the tool's Client Component (e.g., <HairstyleTool/>). Tool internals per its own SPEC; platform provides Error Boundary + loader context.
     - InContent Ad: placed below the interactive tool, height-reserved, consent-gated.
   </tool_page>
 

@@ -1,17 +1,9 @@
 /**
- * AI Provider Error Types
+ * AI Error Re-exports for Backwards Compatibility
  *
- * Typed errors for the AI integration layer. Routes will map these codes to HTTP status codes.
+ * For backwards compatibility, hairstyle-recommendation imports may still use
+ * src/lib/hairstyle-recommendation/ai/errors.ts.
+ * This file re-exports from the platform layer at src/lib/ai/types.ts.
  */
 
-export type AiErrorCode = 'AI_UNAVAILABLE' | 'NO_FACE_DETECTED';
-
-export class AiError extends Error {
-  constructor(
-    public code: AiErrorCode,
-    message?: string
-  ) {
-    super(message || code);
-    this.name = 'AiError';
-  }
-}
+export { AiError, type AiErrorCode } from '../../ai/types';

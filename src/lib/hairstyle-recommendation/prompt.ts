@@ -140,3 +140,39 @@ Select ${MIN_RECS}–${MAX_RECS} and respond in this JSON format. Use ONLY ids f
   ...
 ]`;
 }
+
+/**
+ * Build a prompt for hairstyle style-preview image generation.
+ *
+ * Generates a photorealistic salon portrait prompt from catalog entry metadata.
+ * Input: a hairstyle catalog entry.
+ * Output: a factual, model-safe prompt for text-to-image generation.
+ *
+ * Constraints:
+ * - Photorealistic salon portrait only
+ * - No text, watermarks, or logos
+ * - No user input or free-form text (prompt injection safe)
+ * - Deterministic: same entry → same prompt
+ * - Locale not used (English factual description for model consistency)
+ */
+export function buildStylePreviewPrompt(
+  catalogEntry: HairstyleLibraryEntry
+): string {
+  const styleName = catalogEntry.name.en;
+  const tags = catalogEntry.tags.join(', ');
+  const hairTypes = catalogEntry.hairType.join(', ');
+
+  return `Photorealistic salon portrait photograph. Subject: ${styleName} hairstyle.
+Description:
+- Style: ${styleName}
+- Length: ${catalogEntry.length}
+- Hair types suited: ${hairTypes}
+- Qualities: ${tags}
+
+Requirements:
+- Professional photography quality
+- Clear, well-lit salon environment
+- No text, watermarks, or logos
+- Show hair detail and styling technique
+- Neutral expression, facing camera`;
+}

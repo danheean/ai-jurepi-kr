@@ -135,6 +135,28 @@ export const RecommendRequestSchema = RecommendInputSchema;
 export type RecommendRequest = z.infer<typeof RecommendRequestSchema>;
 
 /**
+ * POST /api/hairstyle/preview request
+ */
+export const PreviewRequestSchema = z
+  .object({
+    hairstyleId: z.string().min(1).max(100),
+    locale: z.enum(['ko', 'en']),
+  })
+  .strict();
+
+export type PreviewRequest = z.infer<typeof PreviewRequestSchema>;
+
+/**
+ * POST /api/hairstyle/preview response data
+ */
+export const PreviewResponseSchema = z.object({
+  image: z.string(), // Data URL
+  mimeType: z.enum(['image/png', 'image/jpeg', 'image/webp']),
+});
+
+export type PreviewResponse = z.infer<typeof PreviewResponseSchema>;
+
+/**
  * Helper: validate and parse an AnalyzeRequest
  */
 export function parseAnalyzeRequest(data: unknown): AnalyzeRequest {
