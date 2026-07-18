@@ -10,7 +10,7 @@ import { z } from 'zod';
 import type { StructuredModel } from './types';
 import { AiError } from './types';
 import { retryJsonExtraction } from './guardrails';
-import { GEMINI_API_KEY, GEMINI_MODEL } from './env';
+import { getGeminiApiKey, getGeminiModel } from './env';
 
 /**
  * GeminiClient implements StructuredModel.
@@ -21,14 +21,14 @@ export class GeminiClient implements StructuredModel {
   private model: string;
 
   constructor(apiKey?: string) {
-    const key = apiKey || GEMINI_API_KEY;
+    const key = apiKey || getGeminiApiKey();
 
     if (!key) {
       throw new AiError('AI_UNAVAILABLE', 'Missing GEMINI_API_KEY');
     }
 
     this.client = new GoogleGenerativeAI(key);
-    this.model = GEMINI_MODEL;
+    this.model = getGeminiModel();
   }
 
   async generateJson<T extends z.ZodType>(req: {

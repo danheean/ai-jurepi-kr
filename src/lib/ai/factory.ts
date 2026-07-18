@@ -9,7 +9,7 @@ import type { StructuredModel, ImageGenerator } from './types';
 import { AiError } from './types';
 import { GeminiClient } from './gemini';
 import { OllamaClient } from './ollama';
-import { AI_PROVIDER, IMAGE_PROVIDER } from './env';
+import { getAiProvider, getImageProvider } from './env';
 
 /**
  * Get the active StructuredModel implementation.
@@ -19,7 +19,7 @@ import { AI_PROVIDER, IMAGE_PROVIDER } from './env';
  * @throws AiError if AI_PROVIDER is unknown or required config is missing
  */
 export function getStructuredModel(): StructuredModel {
-  const provider = AI_PROVIDER;
+  const provider = getAiProvider();
 
   switch (provider) {
     case 'gemini':
@@ -42,7 +42,7 @@ export function getStructuredModel(): StructuredModel {
  * @returns ImageGenerator instance or null if disabled
  */
 export function getImageGenerator(): ImageGenerator | null {
-  const provider = IMAGE_PROVIDER;
+  const provider = getImageProvider();
 
   if (!provider) return null;
 

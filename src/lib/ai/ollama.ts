@@ -12,10 +12,10 @@ import type { StructuredModel, ImageGenerator } from './types';
 import { AiError } from './types';
 import { retryJsonExtraction } from './guardrails';
 import {
-  OLLAMA_BASE_URL,
-  OLLAMA_VISION_MODEL,
-  OLLAMA_TEXT_MODEL,
-  OLLAMA_IMAGE_MODEL,
+  getOllamaBaseUrl,
+  getOllamaVisionModel,
+  getOllamaTextModel,
+  getOllamaImageModel,
 } from './env';
 
 /**
@@ -41,10 +41,10 @@ export class OllamaClient implements StructuredModel, ImageGenerator {
     chatTimeoutMs: number = 120_000,
     imageTimeoutMs: number = 180_000
   ) {
-    this.baseUrl = baseUrl || OLLAMA_BASE_URL;
-    this.visionModel = visionModel || OLLAMA_VISION_MODEL;
-    this.textModel = textModel || OLLAMA_TEXT_MODEL;
-    this.imageModel = imageModel || OLLAMA_IMAGE_MODEL;
+    this.baseUrl = baseUrl || getOllamaBaseUrl();
+    this.visionModel = visionModel || getOllamaVisionModel();
+    this.textModel = textModel || getOllamaTextModel();
+    this.imageModel = imageModel || getOllamaImageModel();
     this.chatTimeoutMs = chatTimeoutMs;
     this.imageTimeoutMs = imageTimeoutMs;
   }

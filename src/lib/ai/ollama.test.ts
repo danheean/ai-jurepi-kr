@@ -7,10 +7,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 
 vi.mock('./env', () => ({
-  OLLAMA_BASE_URL: 'http://localhost:11434',
-  OLLAMA_VISION_MODEL: 'qwen3-vl:8b',
-  OLLAMA_TEXT_MODEL: 'qwen3.5:9b',
-  OLLAMA_IMAGE_MODEL: 'x/z-image-turbo',
+  getOllamaBaseUrl: () => 'http://localhost:11434',
+  getOllamaVisionModel: () => 'qwen3-vl:8b',
+  getOllamaTextModel: () => 'qwen3.5:9b',
+  getOllamaImageModel: () => 'x/z-image-turbo',
   readRuntimeEnv: () => undefined,
 }));
 

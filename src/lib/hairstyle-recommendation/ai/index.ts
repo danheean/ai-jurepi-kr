@@ -13,7 +13,7 @@ import type { HairstyleAI } from '../types';
 import { GeminiProvider } from './gemini';
 import { OllamaProvider } from './ollama';
 import { AiError, type AiErrorCode } from '../../ai/types';
-import { AI_PROVIDER } from '../../ai/env';
+import { getAiProvider } from '../../ai/env';
 
 /**
  * Factory function to get the active HairstyleAI provider.
@@ -22,7 +22,7 @@ import { AI_PROVIDER } from '../../ai/env';
  * @throws AiError if configuration is invalid
  */
 export function getProvider(): HairstyleAI {
-  const provider = AI_PROVIDER;
+  const provider = getAiProvider();
 
   switch (provider) {
     case 'gemini':

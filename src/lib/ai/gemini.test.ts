@@ -19,8 +19,8 @@ vi.mock('@google/generative-ai', () => ({
 }));
 
 vi.mock('./env', () => ({
-  GEMINI_API_KEY: undefined, // No default key in test env
-  GEMINI_MODEL: 'gemini-2.5-flash',
+  getGeminiApiKey: () => undefined, // No default key in test env
+  getGeminiModel: () => 'gemini-flash-latest',
   readRuntimeEnv: () => undefined,
 }));
 

@@ -22,21 +22,21 @@ describe('factory', () => {
 
   describe('getStructuredModel', () => {
     it('returns GeminiClient for gemini provider', () => {
-      vi.mocked(envModule).AI_PROVIDER = 'gemini';
+      vi.mocked(envModule.getAiProvider).mockReturnValue('gemini');
 
       const result = getStructuredModel();
       expect(result).toBeInstanceOf(GeminiClient);
     });
 
     it('returns OllamaClient for ollama provider', () => {
-      vi.mocked(envModule).AI_PROVIDER = 'ollama';
+      vi.mocked(envModule.getAiProvider).mockReturnValue('ollama');
 
       const result = getStructuredModel();
       expect(result).toBeInstanceOf(OllamaClient);
     });
 
     it('throws AiError for unknown provider', () => {
-      vi.mocked(envModule).AI_PROVIDER = 'unknown-provider';
+      vi.mocked(envModule.getAiProvider).mockReturnValue('unknown-provider');
 
       expect(() => getStructuredModel()).toThrow(AiError);
     });
@@ -44,21 +44,21 @@ describe('factory', () => {
 
   describe('getImageGenerator', () => {
     it('returns OllamaClient for ollama provider', () => {
-      vi.mocked(envModule).IMAGE_PROVIDER = 'ollama';
+      vi.mocked(envModule.getImageProvider).mockReturnValue('ollama');
 
       const result = getImageGenerator();
       expect(result).toBeInstanceOf(OllamaClient);
     });
 
     it('returns null if IMAGE_PROVIDER is unset', () => {
-      vi.mocked(envModule).IMAGE_PROVIDER = undefined;
+      vi.mocked(envModule.getImageProvider).mockReturnValue(undefined);
 
       const result = getImageGenerator();
       expect(result).toBeNull();
     });
 
     it('returns null for unknown provider', () => {
-      vi.mocked(envModule).IMAGE_PROVIDER = 'unknown';
+      vi.mocked(envModule.getImageProvider).mockReturnValue('unknown');
 
       const result = getImageGenerator();
       expect(result).toBeNull();
