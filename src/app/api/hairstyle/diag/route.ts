@@ -13,6 +13,8 @@ import {
   getGeminiModel,
 } from '@/lib/ai/env';
 import { getStructuredModel } from '@/lib/ai/factory';
+import { matchCandidates, type RecommendInput } from '@/lib/hairstyle-recommendation';
+import { getProvider } from '@/lib/hairstyle-recommendation/ai';
 
 export async function GET() {
   let contextKeys: string[] | null = null;
@@ -37,8 +39,28 @@ export async function GET() {
     probe = `error: ${err instanceof Error ? `${err.name}/${err.message}` : 'unknown'}`;
   }
 
+  // Replicate the exact recommend flow; surface the raw error message
+  let probeRecommend: string;
+  try {
+    const input: RecommendInput = {
+      faceShape: 'oval',
+      preference: 'neutral',
+      occasion: 'daily',
+      locale: 'ko',
+    };
+    const candidates = matchCandidates(input);
+    const provider = getProvider();
+    const recs = await provider.recommend(input, candidates);
+    probeRecommend = `success: ${recs.length} provider recs from ${candidates.length} candidates`;
+  } catch (err) {
+    probeRecommend = `error: ${
+      err instanceof Error ? `${err.name}/${err.message}` : String(err)
+    }`;
+  }
+
   return NextResponse.json({
     probe,
+    probeRecommend,
     contextKeys,
     contextError,
     processEnvAiKeys: Object.keys(process.env).filter((k) =>
