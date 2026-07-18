@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { RefreshCw, Share2, Copy, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { FaceShape, Recommendation } from '@/lib/hairstyle-recommendation';
@@ -20,6 +20,7 @@ export default function ResultActions({
   recommendations = [],
 }: ResultActionsProps) {
   const t = useTranslations('tools.hairstyle-recommendation');
+  const locale = useLocale() as 'ko' | 'en';
   const { addToast } = useToast();
   const [isCooldown, setIsCooldown] = React.useState(false);
   const [cooldownSeconds, setCooldownSeconds] = React.useState(0);
@@ -43,10 +44,11 @@ export default function ResultActions({
 
   // Copy summary to clipboard
   const handleCopySummary = async () => {
+    const faceShapeLabel = faceShape ? t(`face.${faceShape}`) : 'Unknown';
     const summaryText = [
-      `얼굴형: ${faceShape}`,
-      `추천 헤어스타일:`,
-      ...recommendations.map((rec) => `- ${rec.name.ko}: ${rec.reason}`),
+      `${t('analysis.featuresLabel')}: ${faceShapeLabel}`,
+      `${t('result.tipsLabel')}:`,
+      ...recommendations.map((rec) => `- ${rec.name[locale]}: ${rec.reason}`),
     ].join('\n');
 
     try {
@@ -67,9 +69,15 @@ export default function ResultActions({
   const handleShare = async () => {
     if (navigator.share) {
       try {
+        const faceShapeLabel = faceShape ? t(`face.${faceShape}`) : 'Unknown';
+        const shareTitle = locale === 'ko' ? '헤어스타일 추천' : 'Hairstyle Recommendation';
+        const shareText = locale === 'ko'
+          ? `${faceShapeLabel} 얼굴형에 추천하는 헤어스타일을 확인해보세요!`
+          : `Check out hairstyles recommended for ${faceShapeLabel} face shape!`;
+
         await navigator.share({
-          title: '헤어스타일 추천',
-          text: `${faceShape} 얼굴형에 추천하는 헤어스타일을 확인해보세요!`,
+          title: shareTitle,
+          text: shareText,
           url: window.location.href,
         });
       } catch (err) {

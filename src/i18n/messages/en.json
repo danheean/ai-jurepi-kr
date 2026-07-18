@@ -105,6 +105,11 @@
         "pickTitle": "Choose your face shape"
       },
       "attr": {
+        "genderLabel": "Gender",
+        "genderMale": "Male",
+        "genderFemale": "Female",
+        "genderAny": "Any",
+        "genderAuto": "Auto-detected",
         "preferenceLabel": "Style preference",
         "preferenceFeminine": "Feminine",
         "preferenceMasculine": "Masculine",
@@ -165,7 +170,9 @@
         "replacePhoto": "Replace photo",
         "removePhoto": "Remove",
         "photoEmptyHint": "Your photo stays visible here after upload",
-        "readyHint": "Pick your options and press Get recommendations — results appear here"
+        "readyHint": "Pick your options and press Get recommendations — results appear here",
+        "facePreviewLabel": "Preview on my face",
+        "facePreviewNote": "Your photo is used only to render previews and immediately discarded"
       },
       "preview": {
         "generating": "Generating AI preview…",

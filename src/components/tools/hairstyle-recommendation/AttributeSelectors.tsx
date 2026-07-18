@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import type { Preference, Length, HairType, Occasion } from '@/lib/hairstyle-recommendation';
-import { PREFERENCES, LENGTHS, HAIR_TYPES, OCCASIONS } from '@/lib/hairstyle-recommendation';
+import type { Preference, Length, HairType, Occasion, Gender } from '@/lib/hairstyle-recommendation';
+import { PREFERENCES, LENGTHS, HAIR_TYPES, OCCASIONS, GENDERS } from '@/lib/hairstyle-recommendation';
 
 interface AttributeValues {
+  gender?: Gender;
   preference: Preference;
   length?: Length;
   hairType?: HairType;
@@ -16,6 +17,7 @@ interface AttributeSelectorsProps {
   values: AttributeValues;
   onChange: (updates: Partial<AttributeValues>) => void;
   disabled?: boolean;
+  isGenderAutoDetected?: boolean;
 }
 
 interface PillGroup<T> {
@@ -29,10 +31,17 @@ export default function AttributeSelectors({
   values,
   onChange,
   disabled = false,
+  isGenderAutoDetected = false,
 }: AttributeSelectorsProps) {
   const t = useTranslations('tools.hairstyle-recommendation');
 
   const pillGroups: PillGroup<any>[] = [
+    {
+      label: t('attr.genderLabel'),
+      key: 'gender',
+      options: [...GENDERS, 'any'],
+      isOptional: true,
+    },
     {
       label: t('attr.preferenceLabel'),
       key: 'preference',
@@ -61,9 +70,16 @@ export default function AttributeSelectors({
     <div className="space-y-6">
       {pillGroups.map((group) => (
         <div key={group.key} className="space-y-2">
-          <label className="text-caption-sm font-body-strong text-mute block">
-            {group.label}
-          </label>
+          <div className="flex items-center gap-2">
+            <label className="text-caption-sm font-body-strong text-mute block">
+              {group.label}
+            </label>
+            {group.key === 'gender' && isGenderAutoDetected && values.gender && (
+              <span className="text-caption-sm bg-surface-card text-ash px-2 py-0.5 rounded-full">
+                {t('attr.genderAuto')}
+              </span>
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {group.options.map((option) => {

@@ -14,12 +14,17 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
 
   return (
     <div className="rounded-md bg-canvas border border-hairline p-5 space-y-4">
-      {/* Header: Face shape + confidence meter */}
+      {/* Header: Face shape + gender badge + confidence meter */}
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-2">
           <h3 className="text-heading-md font-heading-md text-ink">
             {t(`face.${analysis.faceShape}`)}
           </h3>
+          {analysis.gender && analysis.gender !== 'unknown' && (
+            <span className="inline-block px-3 py-1 rounded-full bg-surface-card text-charcoal text-caption-sm">
+              {t(`attr.gender${analysis.gender.charAt(0).toUpperCase()}${analysis.gender.slice(1)}`)}
+            </span>
+          )}
         </div>
 
         {/* Confidence meter */}

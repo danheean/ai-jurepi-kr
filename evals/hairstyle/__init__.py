@@ -1,0 +1,1 @@
+"""Hairstyle recommendation evaluation harness."""

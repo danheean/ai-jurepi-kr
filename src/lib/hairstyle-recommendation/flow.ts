@@ -24,6 +24,7 @@ import type {
   Length,
   HairType,
   Occasion,
+  Gender,
 } from './constants';
 
 /**
@@ -59,6 +60,10 @@ export type FlowStage =
 
 /**
  * Complete flow state.
+ *
+ * Rev 2 updates:
+ * - preferences.gender: optional gender (auto-set from analysis, manually overridable)
+ * - facePreviewEnabled: toggle for face-preserving preview mode (default true with photo)
  */
 export interface FlowState {
   stage: FlowStage;
@@ -66,8 +71,10 @@ export interface FlowState {
   photo: Photo | null; // Always-visible uploaded photo (persists through analysis)
   analysis: FaceAnalysis | null; // Result from analyzeFace()
   faceShape: FaceShape | null; // Either from analysis or manual pick
+  facePreviewEnabled: boolean; // Rev 2: "Preview on my face" toggle (default true when photo exists)
   preferences: {
     preference: Preference;
+    gender?: Gender; // Rev 2: optional gender (auto-filled from analysis unless 'unknown', user-overridable)
     length?: Length;
     hairType?: HairType;
     occasion: Occasion;
@@ -82,12 +89,14 @@ export interface FlowState {
 /**
  * Action types for the reducer.
  * Each action type has a specific payload structure.
+ *
+ * Rev 2: Added SET_FACE_PREVIEW for toggle control.
  */
 export type FlowAction =
   | { type: 'CHOOSE_ENTRY'; payload: 'photo' | 'manual' }
   | { type: 'SET_PHOTO'; payload: Photo }
   | { type: 'CLEAR_PHOTO' }
-  | { type: 'START_ANALYZING' } // NEW: Transition to analyzing stage during photo analysis
+  | { type: 'START_ANALYZING' } // Transition to analyzing stage during photo analysis
   | { type: 'PHOTO_ANALYZED'; payload: FaceAnalysis }
   | {
       type: 'ANALYZE_FAILED';
@@ -111,6 +120,7 @@ export type FlowAction =
     }
   | { type: 'PREVIEW_FAILED'; payload: string } // hairstyleId
   | { type: 'PREVIEWS_DISABLED' } // Drain queue if IMAGE_GEN_DISABLED
+  | { type: 'SET_FACE_PREVIEW'; payload: boolean } // Rev 2: toggle face-preview mode
   | {
       type: 'SET_ERROR';
       payload: { code: string; message: string };
@@ -125,6 +135,8 @@ const PREVIEW_CONCURRENCY = 2;
 
 /**
  * Initial state: entry screen, nothing loaded.
+ *
+ * Rev 2: facePreviewEnabled defaults to true (will be controlled by UI once photo exists).
  */
 export const initialFlowState: FlowState = {
   stage: 'entry',
@@ -132,6 +144,7 @@ export const initialFlowState: FlowState = {
   photo: null,
   analysis: null,
   faceShape: null,
+  facePreviewEnabled: true,
   preferences: { preference: 'neutral', occasion: 'daily' },
   recommendations: [],
   previews: {},
@@ -182,14 +195,22 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         stage: 'analyzing',
       };
 
-    case 'PHOTO_ANALYZED':
+    case 'PHOTO_ANALYZED': {
+      const analysis = action.payload;
+      // Rev 2: Auto-apply detected gender if male/female (not 'unknown')
+      const newPreferences =
+        analysis.gender && analysis.gender !== 'unknown'
+          ? { ...state.preferences, gender: analysis.gender as Gender }
+          : { ...state.preferences };
+
       return {
         ...state,
-        preferences: { ...state.preferences },
-        analysis: action.payload,
-        faceShape: action.payload.faceShape,
+        preferences: newPreferences,
+        analysis,
+        faceShape: analysis.faceShape,
         stage: 'attributes',
       };
+    }
 
     case 'ANALYZE_FAILED':
       return {
@@ -353,6 +374,36 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         previews: updatedPreviews,
         previewQueue: [],
         // generatingCount stays as-is (may be > 0 if some are still generating)
+      };
+    }
+
+    case 'SET_FACE_PREVIEW': {
+      // Rev 2: Toggle face-preview mode and invalidate previews if in results stage
+      const newEnabled = action.payload;
+
+      if (state.stage !== 'results' || newEnabled === state.facePreviewEnabled) {
+        // No-op if not in results, or toggling to current state
+        return {
+          ...state,
+          facePreviewEnabled: newEnabled,
+        };
+      }
+
+      // In results stage and toggle changed: invalidate previews and requeue
+      const invalidatedPreviews: Record<string, PreviewState> = {};
+      const newQueue: string[] = [];
+
+      for (const rec of state.recommendations) {
+        invalidatedPreviews[rec.hairstyleId] = { status: 'idle' };
+        newQueue.push(rec.hairstyleId);
+      }
+
+      return {
+        ...state,
+        facePreviewEnabled: newEnabled,
+        previews: invalidatedPreviews,
+        previewQueue: newQueue,
+        generatingCount: 0,
       };
     }
 

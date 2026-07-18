@@ -12,6 +12,8 @@ export {
   LENGTHS,
   HAIR_TYPES,
   OCCASIONS,
+  GENDERS,
+  ANALYSIS_GENDERS,
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
   MAX_EDGE_PX,
@@ -30,6 +32,8 @@ export {
   type Length,
   type HairType,
   type Occasion,
+  type Gender,
+  type AnalysisGender,
   type AllowedImageType,
 } from './constants';
 
@@ -84,7 +88,19 @@ export {
 } from './catalog';
 
 // Prompts
-export { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt } from './prompt';
+export {
+  buildAnalyzePrompt,
+  buildRecommendPrompt,
+  buildStylePreviewPrompt,
+  buildFaceEditPrompt,
+} from './prompt';
+
+// Image Validation
+export {
+  validateImage,
+  extractBase64Payload,
+  estimateDecodedSize,
+} from './image-validation';
 
 // Flow State Machine (domain pure reducer)
 export {

@@ -8,6 +8,7 @@
 import type { StructuredModel, ImageGenerator } from './types';
 import { AiError } from './types';
 import { GeminiClient } from './gemini';
+import { GeminiImageClient } from './gemini-image';
 import { OllamaClient } from './ollama';
 import { getAiProvider, getImageProvider } from './env';
 
@@ -47,6 +48,8 @@ export function getImageGenerator(): ImageGenerator | null {
   if (!provider) return null;
 
   switch (provider) {
+    case 'gemini':
+      return new GeminiImageClient();
     case 'ollama':
       return new OllamaClient();
     default:

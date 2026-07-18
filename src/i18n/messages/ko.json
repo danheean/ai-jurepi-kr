@@ -105,6 +105,11 @@
         "pickTitle": "얼굴형을 선택해주세요"
       },
       "attr": {
+        "genderLabel": "성별",
+        "genderMale": "남성",
+        "genderFemale": "여성",
+        "genderAny": "전체",
+        "genderAuto": "자동 감지",
         "preferenceLabel": "스타일 선호도",
         "preferenceFeminine": "우아한",
         "preferenceMasculine": "세련된",
@@ -165,7 +170,9 @@
         "replacePhoto": "사진 교체",
         "removePhoto": "삭제",
         "photoEmptyHint": "사진을 업로드하면 여기에 계속 표시돼요",
-        "readyHint": "옵션을 고르고 '추천 받기'를 누르면 여기에 결과가 나와요"
+        "readyHint": "옵션을 고르고 '추천 받기'를 누르면 여기에 결과가 나와요",
+        "facePreviewLabel": "내 얼굴로 미리보기",
+        "facePreviewNote": "사진은 미리보기 생성에만 쓰이고 즉시 삭제됩니다"
       },
       "preview": {
         "generating": "AI 미리보기 생성 중…",

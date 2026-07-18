@@ -101,10 +101,11 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
       - No provider SDK is imported outside its provider file; all AI logic is isolated and swappable.
       - **Platform capability layer (src/lib/ai/, added 2026-07-18):** shared, tool-agnostic provider clients that tool adapters compose. Every tool on this hub is AI-backed, so frontier and open-source models must stay swappable behind common ports:
         - `StructuredModel.generateJson<T>({ prompt, image?, schema, maxRetries? })` — structured text/vision JSON generation, zod-validated via shared guardrails (markdown-fence stripping + 1 retry).
-        - `ImageGenerator.generateImage({ prompt, width?, height?, seed?, referenceImage? })` + readonly `supportsImageEdit` — text→image generation; `referenceImage` is the Phase-2 try-on seam (unused in v1).
-        - Providers: `GeminiClient` (frontier, @google/generative-ai SDK) and `OllamaClient` (open-source, plain fetch → `{OLLAMA_BASE_URL}/api/chat` with JSON-schema format + `{OLLAMA_BASE_URL}/v1/images/generations` OpenAI-compatible).
-        - Factories: `getStructuredModel()` selects by AI_PROVIDER (gemini|ollama); `getImageGenerator()` selects by IMAGE_PROVIDER (ollama | unset→null = image generation disabled; callers must degrade gracefully to curated imagery).
-        - Dev default: Ollama on the developer laptop (zero API cost). Production: AI_PROVIDER=gemini, IMAGE_PROVIDER unset — image generation stays off in production until a production image provider is chosen (deferred decision).
+        - `ImageGenerator.generateImage({ prompt, width?, height?, seed?, referenceImage? })` + readonly `supportsImageEdit` — text→image generation; `referenceImage` + `supportsImageEdit=true` enable image EDITING (2026-07-18 rev 2: used by hairstyle face-preserving previews — the reference photo is edited per the prompt while preserving identity).
+        - Providers: `GeminiClient` (frontier structured JSON, @google/generative-ai SDK), `GeminiImageClient` (edit-capable image generation, `gemini-2.5-flash-image` via GEMINI_IMAGE_MODEL, supportsImageEdit=true), and `OllamaClient` (open-source, plain fetch → `{OLLAMA_BASE_URL}/api/chat` with JSON-schema format + `{OLLAMA_BASE_URL}/v1/images/generations` OpenAI-compatible; supportsImageEdit=false).
+        - Factories: `getStructuredModel()` selects by AI_PROVIDER (gemini|ollama); `getImageGenerator()` selects by IMAGE_PROVIDER (gemini | ollama | unset→null = image generation disabled; callers must degrade gracefully to curated imagery).
+        - Dev default: Ollama on the developer laptop (zero API cost). Production: AI_PROVIDER=gemini, IMAGE_PROVIDER unset — enabling IMAGE_PROVIDER=gemini in production is an explicit deploy-time decision (per-image billing; per-IP rate limits are the cost guard).
+        - Prompt-eval harness (2026-07-18 rev 2): `evals/` at the repo root — a uv-managed Python project (LangChain + Ollama) that evaluates the PRODUCTION prompt builders (exported via `scripts/export-prompts.ts`, single source) across local Ollama models with labeled fixtures. Tool suites live under `evals/<tool>/`.
     </ai_abstraction>
     <environment_secrets>
       - Server-only: GEMINI_API_KEY, CLAUDE_API_KEY, etc. (NEVER NEXT_PUBLIC_*).
@@ -225,8 +226,15 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
       <description>Active image-generation provider for getImageGenerator() (server-only). Unset (or "none") = image generation disabled; features degrade gracefully to curated catalog imagery.</description>
       <required>false</required>
       <default>(unset — disabled)</default>
-      <example>ollama</example>
-      <note>Enum: ollama (dev). Production image provider is a deferred decision — deployed site keeps image generation off until one is chosen (e.g., Workers AI or a tunneled Ollama).</note>
+      <example>gemini</example>
+      <note>Enum: gemini (edit-capable — face-preserving previews; billed per image; uses GEMINI_API_KEY), ollama (dev, text→image only). Production enablement of 'gemini' is an explicit deploy-time decision.</note>
+    </variable>
+    <variable>
+      <name>GEMINI_IMAGE_MODEL</name>
+      <description>Model tag for GeminiImageClient (server-only).</description>
+      <required>false</required>
+      <default>gemini-2.5-flash-image</default>
+      <note>Shares GEMINI_API_KEY. Only relevant when IMAGE_PROVIDER=gemini.</note>
     </variable>
     <variable>
       <name>OLLAMA_BASE_URL</name>
@@ -310,6 +318,7 @@ src/
 │   │   ├── env.ts                  # readRuntimeEnv (Cloudflare context → process.env fallback) + config getters
 │   │   ├── guardrails.ts           # JSON extraction (fence strip) + zod validation + 1 retry
 │   │   ├── gemini.ts               # GeminiClient (frontier; @google/generative-ai)
+│   │   ├── gemini-image.ts         # GeminiImageClient (edit-capable image gen; gemini-2.5-flash-image; supportsImageEdit=true)
 │   │   ├── ollama.ts               # OllamaClient (open-source; fetch → /api/chat, /v1/images/generations)
 │   │   └── factory.ts              # getStructuredModel() / getImageGenerator()
 │   │

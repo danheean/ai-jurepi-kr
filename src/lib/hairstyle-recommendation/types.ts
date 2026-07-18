@@ -11,15 +11,20 @@ import type {
   Length,
   HairType,
   Occasion,
+  Gender,
+  AnalysisGender,
 } from './constants';
 
 /**
  * Face shape analysis returned by the AI vision model.
  * Represents the AI's understanding of a face shape from an image.
+ *
+ * Rev 2: includes perceived gender presentation (male/female/unknown).
  */
 export interface FaceAnalysis {
   faceShape: FaceShape;
   confidence: number; // 0–1, model-reported certainty
+  gender: AnalysisGender; // male | female | unknown; clamps invalid to 'unknown'
   features: string[]; // 0–5 salient notes (e.g. "strong jawline")
   notes?: string; // ≤240 chars, neutral description
 }
@@ -27,9 +32,12 @@ export interface FaceAnalysis {
 /**
  * User input to the recommend endpoint.
  * Either derived from a prior analyze call or manually selected.
+ *
+ * Rev 2: includes optional gender (male/female) for gender-aware matching.
  */
 export interface RecommendInput {
   faceShape: FaceShape;
+  gender?: Gender; // optional; auto-filled from analysis (unless 'unknown'), user-overridable
   preference: Preference; // defaults to neutral
   length?: Length; // optional, no constraint if omitted
   hairType?: HairType; // optional
@@ -60,6 +68,8 @@ export interface Recommendation {
 /**
  * Curated static hairstyle library entry.
  * Source of truth for imagery and metadata.
+ *
+ * Rev 2: genders field tags which genders suit this hairstyle (male/female or both).
  */
 export interface HairstyleLibraryEntry {
   id: string; // kebab-case, stable, unique
@@ -68,6 +78,7 @@ export interface HairstyleLibraryEntry {
     en: string;
   };
   suitableFaceShapes: FaceShape[];
+  genders: ReadonlyArray<Gender>; // male, female, or both (unisex)
   preference: Preference;
   length: Length;
   hairType: HairType[];

@@ -101,6 +101,7 @@ describe('flowReducer — State Machine', () => {
       const analysis = {
         faceShape: 'oval' as const,
         confidence: 0.92,
+        gender: 'male' as const,
         features: ['strong jawline', 'high cheekbones'],
         notes: 'Clear face visibility',
       };
@@ -119,6 +120,7 @@ describe('flowReducer — State Machine', () => {
       const analysis = {
         faceShape: 'round' as const,
         confidence: 0.45,
+        gender: 'female' as const,
         features: ['face partially visible'],
       };
       const action: FlowAction = {
@@ -639,6 +641,7 @@ describe('flowReducer — State Machine', () => {
       state.analysis = {
         faceShape: 'oval',
         confidence: 0.9,
+        gender: 'male',
         features: ['jawline'],
       };
       state.preferences = {
@@ -1067,6 +1070,7 @@ describe('flowReducer — State Machine', () => {
       const analysis = {
         faceShape: 'oval' as const,
         confidence: 0.9,
+        gender: 'male' as const,
         features: ['symmetrical'],
       };
       next = flowReducer(next, {
@@ -1107,6 +1111,164 @@ describe('flowReducer — State Machine', () => {
       });
       expect(next.stage).toBe('facepicker');
       expect(next.error).toBeNull(); // Error cleared
+    });
+  });
+
+  // ============================================================================
+  // SET_FACE_PREVIEW (Rev 2)
+  // ============================================================================
+  describe('SET_FACE_PREVIEW', () => {
+    it('should toggle facePreviewEnabled to true', () => {
+      state.facePreviewEnabled = false;
+      const action: FlowAction = {
+        type: 'SET_FACE_PREVIEW',
+        payload: true,
+      };
+      const next = flowReducer(state, action);
+
+      expect(next.facePreviewEnabled).toBe(true);
+    });
+
+    it('should toggle facePreviewEnabled to false', () => {
+      state.facePreviewEnabled = true;
+      const action: FlowAction = {
+        type: 'SET_FACE_PREVIEW',
+        payload: false,
+      };
+      const next = flowReducer(state, action);
+
+      expect(next.facePreviewEnabled).toBe(false);
+    });
+
+    it('should no-op when not in results stage', () => {
+      state.stage = 'attributes';
+      state.facePreviewEnabled = true;
+      const originalState = { ...state };
+
+      const action: FlowAction = {
+        type: 'SET_FACE_PREVIEW',
+        payload: false,
+      };
+      const next = flowReducer(state, action);
+
+      expect(next.facePreviewEnabled).toBe(false);
+      expect(next.stage).toBe('attributes'); // Stage unchanged
+    });
+
+    it('should no-op when toggling to current state in results stage', () => {
+      state.stage = 'results';
+      state.facePreviewEnabled = true;
+      state.recommendations = [
+        {
+          hairstyleId: 'style-1',
+          name: { ko: 'style', en: 'style' },
+          reason: 'reason',
+          tips: ['tip'],
+          referenceImage: { src: '/img.webp', alt: 'alt', credit: 'credit' },
+          tags: [],
+        },
+      ];
+      state.previews = { 'style-1': { status: 'done', imageDataUrl: 'data:...' } };
+
+      const action: FlowAction = {
+        type: 'SET_FACE_PREVIEW',
+        payload: true, // Same as current state
+      };
+      const next = flowReducer(state, action);
+
+      // Should preserve existing previews (no requeue)
+      expect(next.facePreviewEnabled).toBe(true);
+      expect(next.previews['style-1'].status).toBe('done');
+      expect(next.previewQueue.length).toBe(0);
+    });
+
+    it('should invalidate and requeue all previews when toggling in results stage', () => {
+      state.stage = 'results';
+      state.facePreviewEnabled = true;
+      state.recommendations = [
+        {
+          hairstyleId: 'style-1',
+          name: { ko: 'style1', en: 'style1' },
+          reason: 'reason',
+          tips: ['tip'],
+          referenceImage: { src: '/img.webp', alt: 'alt', credit: 'credit' },
+          tags: [],
+        },
+        {
+          hairstyleId: 'style-2',
+          name: { ko: 'style2', en: 'style2' },
+          reason: 'reason',
+          tips: ['tip'],
+          referenceImage: { src: '/img.webp', alt: 'alt', credit: 'credit' },
+          tags: [],
+        },
+      ];
+      state.previews = {
+        'style-1': { status: 'done', imageDataUrl: 'data:...' },
+        'style-2': { status: 'generating' },
+      };
+      state.generatingCount = 1;
+
+      const action: FlowAction = {
+        type: 'SET_FACE_PREVIEW',
+        payload: false, // Toggle OFF
+      };
+      const next = flowReducer(state, action);
+
+      expect(next.facePreviewEnabled).toBe(false);
+      // All previews should be reset to idle
+      expect(next.previews['style-1'].status).toBe('idle');
+      expect(next.previews['style-2'].status).toBe('idle');
+      // Queue should contain both style IDs
+      expect(next.previewQueue).toEqual(['style-1', 'style-2']);
+      // Generating count should reset
+      expect(next.generatingCount).toBe(0);
+    });
+
+    it('should handle empty recommendations gracefully', () => {
+      state.stage = 'results';
+      state.facePreviewEnabled = true;
+      state.recommendations = [];
+      state.previews = {};
+
+      const action: FlowAction = {
+        type: 'SET_FACE_PREVIEW',
+        payload: false,
+      };
+      const next = flowReducer(state, action);
+
+      expect(next.facePreviewEnabled).toBe(false);
+      expect(next.previewQueue.length).toBe(0);
+      expect(next.generatingCount).toBe(0);
+    });
+  });
+
+  // ============================================================================
+  // PREVIEW_FAILED with unknown hairstyleId
+  // ============================================================================
+  describe('PREVIEW_FAILED edge cases', () => {
+    it('should ignore PREVIEW_FAILED for unknown hairstyleId', () => {
+      state.stage = 'results';
+      state.recommendations = [
+        {
+          hairstyleId: 'known-style',
+          name: { ko: 'style', en: 'style' },
+          reason: 'reason',
+          tips: ['tip'],
+          referenceImage: { src: '/img.webp', alt: 'alt', credit: 'credit' },
+          tags: [],
+        },
+      ];
+      state.previews = { 'known-style': { status: 'idle' } };
+      const originalState = JSON.stringify(state);
+
+      const action: FlowAction = {
+        type: 'PREVIEW_FAILED',
+        payload: 'unknown-style',
+      };
+      const next = flowReducer(state, action);
+
+      expect(JSON.stringify(next)).toBe(originalState);
     });
   });
 

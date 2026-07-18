@@ -8,6 +8,7 @@
  * - id (kebab-case, stable)
  * - bilingual names (ko/en)
  * - suitableFaceShapes (subset of 7 shapes)
+ * - genders (rev 2: male/female or both for unisex)
  * - preference (feminine/masculine/neutral)
  * - length (short/medium/long)
  * - hairType[] (subset of 4 types)
@@ -20,8 +21,13 @@ import type {
   Recommendation,
   ProviderRecommendation,
 } from './types';
-import type { FaceShape, Preference, Length, HairType } from './constants';
+import type { FaceShape, Preference, Length, HairType, Gender } from './constants';
 import { MAX_RECS, MIN_RECS } from './constants';
+import {
+  buildBackfillReason,
+  buildBackfillHairTypeTip,
+  buildBackfillLengthTip,
+} from './locale-templates';
 
 /**
  * Curated hairstyle library: ≥24 entries covering all combinations
@@ -39,6 +45,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'soft-layered-bob',
     name: { ko: '소프트 레이어드 밥', en: 'Soft Layered Bob' },
     suitableFaceShapes: ['oval', 'round', 'heart'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'short',
     hairType: ['straight', 'wavy', 'curly'],
@@ -55,6 +62,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'long-waves',
     name: { ko: '롱 웨이브', en: 'Long Waves' },
     suitableFaceShapes: ['oval', 'diamond', 'heart'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'long',
     hairType: ['wavy', 'curly'],
@@ -71,6 +79,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'wispy-bangs-medium',
     name: { ko: '위스피 뱅 미디움', en: 'Wispy Bangs Medium' },
     suitableFaceShapes: ['oval', 'square', 'oblong'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'medium',
     hairType: ['straight', 'wavy'],
@@ -88,6 +97,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'textured-crew-cut',
     name: { ko: '텍스처 크루컷', en: 'Textured Crew Cut' },
     suitableFaceShapes: ['oval', 'square', 'diamond'],
+    genders: ['male'],
     preference: 'masculine',
     length: 'short',
     hairType: ['straight', 'wavy', 'curly'],
@@ -104,6 +114,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'taper-fade-medium',
     name: { ko: '테이퍼 페이드 미디움', en: 'Taper Fade Medium' },
     suitableFaceShapes: ['oval', 'round', 'heart'],
+    genders: ['male'],
     preference: 'masculine',
     length: 'medium',
     hairType: ['straight', 'wavy'],
@@ -120,6 +131,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'long-curtain-haircut',
     name: { ko: '롱 커튼 커트', en: 'Long Curtain Haircut' },
     suitableFaceShapes: ['oval', 'oblong', 'heart'],
+    genders: ['male', 'female'],
     preference: 'masculine',
     length: 'long',
     hairType: ['wavy', 'curly'],
@@ -137,6 +149,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'shoulder-length-straight',
     name: { ko: '숄더 렝스 스트레이트', en: 'Shoulder Length Straight' },
     suitableFaceShapes: ['oval', 'oblong', 'diamond'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'medium',
     hairType: ['straight', 'wavy'],
@@ -153,6 +166,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'modern-pixie',
     name: { ko: '모던 픽시', en: 'Modern Pixie' },
     suitableFaceShapes: ['oval', 'diamond', 'heart'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'short',
     hairType: ['straight', 'wavy', 'curly'],
@@ -169,6 +183,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'sleek-long-bob',
     name: { ko: '슬릭 롱밥', en: 'Sleek Long Bob' },
     suitableFaceShapes: ['oval', 'square', 'oblong'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'medium',
     hairType: ['straight'],
@@ -189,6 +204,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'high-layers-height',
     name: { ko: '하이 레이어 높이', en: 'High Layers Height' },
     suitableFaceShapes: ['round', 'heart', 'triangle'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'medium',
     hairType: ['wavy', 'curly'],
@@ -205,6 +221,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'side-swept-volume',
     name: { ko: '사이드 스윕 볼륨', en: 'Side Swept Volume' },
     suitableFaceShapes: ['round', 'diamond'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'long',
     hairType: ['wavy', 'curly'],
@@ -221,6 +238,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'sharp-undercut-masculine',
     name: { ko: '샤프 언더컷 마스큘린', en: 'Sharp Undercut' },
     suitableFaceShapes: ['round', 'square', 'triangle'],
+    genders: ['male'],
     preference: 'masculine',
     length: 'medium',
     hairType: ['straight', 'wavy'],
@@ -241,6 +259,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'soft-waves-cheekbones',
     name: { ko: '소프트 웨이브 광대뼈', en: 'Soft Waves Cheekbones' },
     suitableFaceShapes: ['square', 'oblong', 'diamond'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'medium',
     hairType: ['wavy', 'curly'],
@@ -257,6 +276,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'angled-lob-sharp',
     name: { ko: '앵글 롭 샤프', en: 'Angled Lob Sharp' },
     suitableFaceShapes: ['square', 'round'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'medium',
     hairType: ['straight', 'wavy'],
@@ -277,6 +297,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'chin-length-volume',
     name: { ko: '턱 길이 볼륨', en: 'Chin Length Volume' },
     suitableFaceShapes: ['heart', 'diamond', 'triangle'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'short',
     hairType: ['wavy', 'curly'],
@@ -293,6 +314,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'temple-hugging-short',
     name: { ko: '템플 허깅 숏', en: 'Temple Hugging Short' },
     suitableFaceShapes: ['heart', 'oblong'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'short',
     hairType: ['straight', 'wavy'],
@@ -313,6 +335,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'voluminous-bob-width',
     name: { ko: '볼륨 밥 너비', en: 'Voluminous Bob Width' },
     suitableFaceShapes: ['oblong', 'triangle', 'diamond'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'short',
     hairType: ['wavy', 'curly'],
@@ -329,6 +352,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'side-part-fluff',
     name: { ko: '사이드 파트 플러프', en: 'Side Part Fluff' },
     suitableFaceShapes: ['oblong', 'heart'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'medium',
     hairType: ['wavy', 'curly'],
@@ -349,6 +373,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'forehead-framing-waves',
     name: { ko: '이마 프레이밍 웨이브', en: 'Forehead Framing Waves' },
     suitableFaceShapes: ['diamond', 'heart', 'triangle'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'medium',
     hairType: ['wavy', 'curly'],
@@ -365,6 +390,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'cheekbone-sharpener',
     name: { ko: '광대뼈 샤프너', en: 'Cheekbone Sharpener' },
     suitableFaceShapes: ['diamond', 'square', 'oblong'],
+    genders: ['female'],
     preference: 'neutral',
     length: 'short',
     hairType: ['straight', 'wavy'],
@@ -385,6 +411,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'crown-volume-length',
     name: { ko: '크라운 볼륨 렝스', en: 'Crown Volume Length' },
     suitableFaceShapes: ['triangle', 'heart', 'oblong'],
+    genders: ['female'],
     preference: 'feminine',
     length: 'long',
     hairType: ['wavy', 'curly'],
@@ -401,6 +428,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
     id: 'spiky-top-fade',
     name: { ko: '스파이키 탑 페이드', en: 'Spiky Top Fade' },
     suitableFaceShapes: ['triangle', 'round', 'diamond'],
+    genders: ['male'],
     preference: 'masculine',
     length: 'medium',
     hairType: ['straight', 'wavy', 'curly'],
@@ -429,6 +457,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
       'diamond',
       'triangle',
     ],
+    genders: ['female'],
     preference: 'neutral',
     length: 'long',
     hairType: ['wavy', 'curly'],
@@ -453,6 +482,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
       'diamond',
       'triangle',
     ],
+    genders: ['female'],
     preference: 'neutral',
     length: 'medium',
     hairType: ['straight', 'wavy'],
@@ -477,6 +507,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
       'diamond',
       'triangle',
     ],
+    genders: ['female'],
     preference: 'neutral',
     length: 'medium',
     hairType: ['wavy', 'curly', 'coily'],
@@ -487,6 +518,180 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
       license: 'Creative Commons',
     },
     tags: ['neutral', 'textured', 'effortless', 'universal'],
+  },
+
+  // ============================================================================
+  // MASCULINE STYLES (Phase 3 — Korean men's staples)
+  // ============================================================================
+
+  {
+    id: 'two-block',
+    name: { ko: '투블럭', en: 'Two Block' },
+    suitableFaceShapes: ['oval', 'square', 'diamond'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'short',
+    hairType: ['straight', 'wavy'],
+    image: {
+      src: '/hairstyles/two-block/masculine.webp',
+      alt: 'Two block cut with voluminous top and faded sides',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'modern', 'sharp', 'popular'],
+  },
+
+  {
+    id: 'crop-cut',
+    name: { ko: '크롭컷', en: 'Crop Cut' },
+    suitableFaceShapes: ['oval', 'round', 'heart'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'short',
+    hairType: ['straight', 'wavy', 'curly'],
+    image: {
+      src: '/hairstyles/crop-cut/masculine.webp',
+      alt: 'Short textured crop cut with natural movement',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'low-maintenance', 'textured', 'modern'],
+  },
+
+  {
+    id: 'dandy-cut',
+    name: { ko: '댄디컷', en: 'Dandy Cut' },
+    suitableFaceShapes: ['square', 'heart', 'oblong'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'medium',
+    hairType: ['straight', 'wavy'],
+    image: {
+      src: '/hairstyles/dandy-cut/masculine.webp',
+      alt: 'Clean dandy cut with structured styling',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'refined', 'structured', 'classic'],
+  },
+
+  {
+    id: 'regent',
+    name: { ko: '리젠트', en: 'Regent' },
+    suitableFaceShapes: ['oval', 'diamond'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'medium',
+    hairType: ['wavy', 'curly'],
+    image: {
+      src: '/hairstyles/regent/masculine.webp',
+      alt: 'Regent style with slicked-back waves',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'classic', 'textured', 'sophisticated'],
+  },
+
+  {
+    id: 'shadow-perm',
+    name: { ko: '쉐도우펌', en: 'Shadow Perm' },
+    suitableFaceShapes: ['round', 'triangle'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'short',
+    hairType: ['wavy', 'curly'],
+    image: {
+      src: '/hairstyles/shadow-perm/masculine.webp',
+      alt: 'Subtle shadow perm with natural waves',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'textured', 'modern', 'volume'],
+  },
+
+  {
+    id: 'as-perm',
+    name: { ko: '애즈펌', en: 'As Perm' },
+    suitableFaceShapes: ['square', 'heart'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'medium',
+    hairType: ['wavy', 'curly'],
+    image: {
+      src: '/hairstyles/as-perm/masculine.webp',
+      alt: 'Lighter as perm with textured waves',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'modern', 'textured', 'trendy'],
+  },
+
+  {
+    id: 'side-part-perm',
+    name: { ko: '가르마펌', en: 'Side Part Perm' },
+    suitableFaceShapes: ['oblong', 'heart'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'medium',
+    hairType: ['wavy', 'curly'],
+    image: {
+      src: '/hairstyles/side-part-perm/masculine.webp',
+      alt: 'Side-parted style with permed waves',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'classic', 'textured', 'width-adding'],
+  },
+
+  {
+    id: 'see-through-dandy',
+    name: { ko: '시스루 댄디', en: 'See Through Dandy' },
+    suitableFaceShapes: ['oval', 'round'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'medium',
+    hairType: ['straight', 'wavy'],
+    image: {
+      src: '/hairstyles/see-through-dandy/masculine.webp',
+      alt: 'Modern see-through dandy with transparent layers',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'modern', 'trendy', 'clean-lines'],
+  },
+
+  {
+    id: 'buzz-cut',
+    name: { ko: '버즈컷', en: 'Buzz Cut' },
+    suitableFaceShapes: ['oval', 'square', 'diamond', 'triangle'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'short',
+    hairType: ['straight', 'wavy', 'curly'],
+    image: {
+      src: '/hairstyles/buzz-cut/masculine.webp',
+      alt: 'Clean buzz cut with even length',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'minimal', 'low-maintenance', 'clean'],
+  },
+
+  {
+    id: 'wolf-cut-men',
+    name: { ko: '남성 울프컷', en: 'Wolf Cut Men' },
+    suitableFaceShapes: ['round', 'oblong', 'triangle'],
+    genders: ['male'],
+    preference: 'masculine',
+    length: 'medium',
+    hairType: ['wavy', 'curly'],
+    image: {
+      src: '/hairstyles/wolf-cut-men/masculine.webp',
+      alt: 'Textured wolf cut with layered definition',
+      credit: 'AI generated',
+      license: 'generated',
+    },
+    tags: ['masculine', 'edgy', 'textured', 'trendy'],
   },
 ];
 
@@ -500,13 +705,19 @@ export function getHairstyleById(id: string): HairstyleLibraryEntry | null {
 /**
  * Filter hairstyles matching the given criteria.
  *
- * Pure function with no side effects. Returns candidates suitable for the input,
- * prioritizing face shape and preference, with soft filtering on length/hairType.
+ * Pure function with no side effects. Returns candidates suitable for the input.
+ * Applies hard filters (face shape, gender, preference) then soft filters (length, hairType).
+ *
+ * Gender hard filter first (rev 2): when input.gender is set, only returns entries
+ * whose genders field includes that gender. If the gender-filtered pool would drop
+ * below MIN_RECS and the pool itself has entries, preference filtering is relaxed
+ * to a soft filter (prefer preference matches but don't exclude non-matches).
  *
  * @returns Array of at least MAX_RECS entries if available; otherwise all matches
  */
 export function matchCandidates(input: {
   faceShape: FaceShape;
+  gender?: Gender;
   preference?: Preference;
   length?: Length;
   hairType?: HairType;
@@ -518,9 +729,24 @@ export function matchCandidates(input: {
     h.suitableFaceShapes.includes(input.faceShape)
   );
 
-  // Hard filter: preference must match (if specified)
+  // Hard filter: gender must match (rev 2 — applied FIRST before preference)
+  if (input.gender) {
+    candidates = candidates.filter((h) => h.genders.includes(input.gender!));
+  }
+
+  // Hard filter: preference — but relax to soft if gender filter narrows below MIN_RECS
   if (input.preference) {
-    candidates = candidates.filter((h) => h.preference === input.preference);
+    const prefMatches = candidates.filter((h) => h.preference === input.preference);
+
+    // If we have enough preference matches (or no gender filter was applied), use preference hard filter
+    if (prefMatches.length >= MIN_RECS || !input.gender) {
+      candidates = prefMatches;
+    } else if (prefMatches.length > 0) {
+      // If gender filter was applied and preference matches < MIN_RECS, prefer matches but include all
+      candidates = prefMatches.concat(
+        candidates.filter((h) => h.preference !== input.preference)
+      );
+    }
   }
 
   // Soft filter: prioritize matching length and hairType, but include all
@@ -594,6 +820,9 @@ export function attachCatalog(
  * Adds additional recommendations from the matched candidates that are not
  * already included, preserving order and maintaining catalog consistency.
  *
+ * Uses locale-specific templates (rev 2) so Korean backfill text contains
+ * no hardcoded English and all enums are translated to the target locale.
+ *
  * @returns Recommendation[] with ≥ MIN_RECS entries
  */
 export function backfill(
@@ -616,14 +845,15 @@ export function backfill(
   for (const candidate of unused) {
     if (filled.length >= MIN_RECS) break;
 
+    const reason = buildBackfillReason(candidate.preference, locale);
+    const hairTip = buildBackfillHairTypeTip(candidate.hairType, locale);
+    const lengthTip = buildBackfillLengthTip(candidate.length, locale);
+
     filled.push({
       hairstyleId: candidate.id,
       name: candidate.name,
-      reason: `Suited to your ${candidate.preference} style preferences.`,
-      tips: [
-        `Works well with ${candidate.hairType.join(' or ')} hair.`,
-        `Length: ${candidate.length}.`,
-      ],
+      reason,
+      tips: [hairTip, lengthTip],
       referenceImage: candidate.image,
       tags: candidate.tags,
     });

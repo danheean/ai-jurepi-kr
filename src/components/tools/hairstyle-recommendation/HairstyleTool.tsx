@@ -61,9 +61,10 @@ export default function HairstyleTool() {
 
   // Cleanup all preview requests on unmount
   useEffect(() => {
+    const abortMap = previewAbortMapRef.current;
     return () => {
-      previewAbortMapRef.current.forEach((ctrl) => ctrl.abort());
-      previewAbortMapRef.current.clear();
+      abortMap.forEach((ctrl) => ctrl.abort());
+      abortMap.clear();
     };
   }, []);
 
@@ -148,6 +149,7 @@ export default function HairstyleTool() {
     try {
       const input: RecommendInput = {
         faceShape: state.faceShape,
+        gender: state.preferences.gender,
         preference: state.preferences.preference,
         length: state.preferences.length,
         hairType: state.preferences.hairType,
@@ -215,10 +217,26 @@ export default function HairstyleTool() {
 
       const generatePreview = async () => {
         try {
+          const previewPayload: any = {
+            hairstyleId,
+            locale,
+          };
+
+          // Include photo and gender for face-preserving previews
+          if (state.facePreviewEnabled && state.photo) {
+            previewPayload.image = state.photo.data;
+            previewPayload.mimeType = state.photo.mimeType;
+          }
+
+          // Always include gender when set
+          if (state.preferences.gender) {
+            previewPayload.gender = state.preferences.gender;
+          }
+
           const response = await fetch('/api/hairstyle/preview', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hairstyleId, locale }),
+            body: JSON.stringify(previewPayload),
             signal: abortCtrl.signal,
           });
 
@@ -263,7 +281,7 @@ export default function HairstyleTool() {
 
       generatePreview();
     }
-  }, [state.previews, locale]);
+  }, [state.stage, state.previews, state.facePreviewEnabled, state.photo, state.preferences.gender, locale]);
 
   // Handlers
   const handleChooseEntry = useCallback((path: 'photo' | 'manual') => {
@@ -304,6 +322,10 @@ export default function HairstyleTool() {
     previewAbortMapRef.current.forEach((ctrl) => ctrl.abort());
     previewAbortMapRef.current.clear();
     dispatch({ type: 'RESET' });
+  }, []);
+
+  const handleFacePreviewToggle = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_FACE_PREVIEW', payload: enabled });
   }, []);
 
   // Entry stage
@@ -379,6 +401,68 @@ export default function HairstyleTool() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* RAIL: lg:col-span-1, sticky — FIRST in DOM (left on desktop) */}
+      <aside className="lg:col-span-1 lg:sticky lg:top-20 self-start space-y-4">
+        {/* My Photo Panel (lg only) */}
+        {state.photo && (
+          <div className="hidden lg:block">
+            <MyPhotoPanel
+              photoUrl={state.photo.objectUrl}
+              onReplace={handleReplace}
+              onRemove={handleRemove}
+              facePreviewEnabled={state.facePreviewEnabled}
+              onFacePreviewToggle={handleFacePreviewToggle}
+            />
+          </div>
+        )}
+
+        {/* Analysis Card (with skeleton during analyzing) */}
+        {(state.analysis || state.stage === 'analyzing') && (
+          <>
+            {state.analysis ? (
+              <AnalysisCard analysis={state.analysis} />
+            ) : (
+              <div className="rounded-md bg-surface-card p-4 space-y-3">
+                <div className="h-6 bg-hairline-soft rounded w-3/4" />
+                <div className="h-4 bg-hairline-soft rounded w-full" />
+                <div className="h-4 bg-hairline-soft rounded w-4/5" />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Attribute Selectors */}
+        {(state.stage === 'attributes' ||
+          state.stage === 'analyzing' ||
+          state.stage === 'recommending') && (
+          <div className="space-y-3">
+            <AttributeSelectors
+              values={state.preferences}
+              onChange={handlePreferencesChange}
+              disabled={state.stage === 'analyzing' || state.stage === 'recommending'}
+              isGenderAutoDetected={
+                state.analysis?.gender &&
+                state.analysis.gender !== 'unknown' &&
+                state.analysis.gender === state.preferences.gender
+              }
+            />
+          </div>
+        )}
+
+        {/* Primary CTA */}
+        {(state.stage === 'attributes' ||
+          state.stage === 'facepicker' ||
+          state.stage === 'recommending') && (
+          <button
+            onClick={handleGetRecommendations}
+            disabled={!state.faceShape || state.stage === 'recommending'}
+            className="w-full px-4 py-3 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash min-h-[44px]"
+          >
+            {state.stage === 'recommending' ? t('cta.finding') : t('cta.get')}
+          </button>
+        )}
+      </aside>
+
       {/* MAIN: lg:col-span-2 */}
       <div className="lg:col-span-2 space-y-6">
         {/* Analyzing state placeholder */}
@@ -456,61 +540,6 @@ export default function HairstyleTool() {
           </div>
         )}
       </div>
-
-      {/* RAIL: lg:col-span-1, sticky */}
-      <aside className="order-first lg:order-none lg:col-span-1 lg:sticky lg:top-20 self-start space-y-4">
-        {/* My Photo Panel (lg only) */}
-        {state.photo && (
-          <div className="hidden lg:block">
-            <MyPhotoPanel
-              photoUrl={state.photo.objectUrl}
-              onReplace={handleReplace}
-              onRemove={handleRemove}
-            />
-          </div>
-        )}
-
-        {/* Analysis Card (with skeleton during analyzing) */}
-        {(state.analysis || state.stage === 'analyzing') && (
-          <>
-            {state.analysis ? (
-              <AnalysisCard analysis={state.analysis} />
-            ) : (
-              <div className="rounded-md bg-surface-card p-4 space-y-3">
-                <div className="h-6 bg-hairline-soft rounded w-3/4" />
-                <div className="h-4 bg-hairline-soft rounded w-full" />
-                <div className="h-4 bg-hairline-soft rounded w-4/5" />
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Attribute Selectors */}
-        {(state.stage === 'attributes' ||
-          state.stage === 'analyzing' ||
-          state.stage === 'recommending') && (
-          <div className="space-y-3">
-            <AttributeSelectors
-              values={state.preferences}
-              onChange={handlePreferencesChange}
-              disabled={state.stage === 'analyzing' || state.stage === 'recommending'}
-            />
-          </div>
-        )}
-
-        {/* Primary CTA */}
-        {(state.stage === 'attributes' ||
-          state.stage === 'facepicker' ||
-          state.stage === 'recommending') && (
-          <button
-            onClick={handleGetRecommendations}
-            disabled={!state.faceShape || state.stage === 'recommending'}
-            className="w-full px-4 py-3 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash min-h-[44px]"
-          >
-            {state.stage === 'recommending' ? t('cta.finding') : t('cta.get')}
-          </button>
-        )}
-      </aside>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt } from './prompt';
+import { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt, buildFaceEditPrompt } from './prompt';
 import { matchCandidates, HAIRSTYLE_LIBRARY } from './catalog';
 import { MIN_RECS, MAX_RECS } from './constants';
 
@@ -355,5 +355,155 @@ describe('buildStylePreviewPrompt', () => {
     // Verify it doesn't contain patterns that would come from user input
     expect(prompt).not.toContain('{');
     expect(prompt).not.toContain('${');
+  });
+
+  describe('buildStylePreviewPrompt with gender parameter', () => {
+    it('includes "young Korean male model" when gender is male', () => {
+      const entry = HAIRSTYLE_LIBRARY[0];
+      const prompt = buildStylePreviewPrompt(entry, 'male');
+      expect(prompt).toContain('young Korean male model');
+      expect(prompt).not.toContain('young Korean female model');
+      expect(prompt).not.toContain('young person');
+    });
+
+    it('includes "young Korean female model" when gender is female', () => {
+      const entry = HAIRSTYLE_LIBRARY[0];
+      const prompt = buildStylePreviewPrompt(entry, 'female');
+      expect(prompt).toContain('young Korean female model');
+      expect(prompt).not.toContain('young Korean male model');
+      expect(prompt).not.toContain('young person');
+    });
+
+    it('defaults to single gender when entry has one gender and no gender parameter', () => {
+      // Find an entry with a single gender (e.g., all feminine have ['female'])
+      const femaleEntry = HAIRSTYLE_LIBRARY.find((h) => h.genders.length === 1 && h.genders[0] === 'female');
+      expect(femaleEntry).toBeDefined();
+
+      const prompt = buildStylePreviewPrompt(femaleEntry!);
+      expect(prompt).toContain('young Korean female model');
+    });
+
+    it('uses "young person" when entry has multiple genders and no gender parameter', () => {
+      // Find an entry with multiple genders
+      const unisexEntry = HAIRSTYLE_LIBRARY.find((h) => h.genders.length > 1);
+      expect(unisexEntry).toBeDefined();
+
+      const prompt = buildStylePreviewPrompt(unisexEntry!);
+      expect(prompt).toContain('young person');
+      expect(prompt).not.toContain('young Korean male model');
+      expect(prompt).not.toContain('young Korean female model');
+    });
+
+    it('overrides entry gender with explicit gender parameter', () => {
+      // Find a female-only entry
+      const femaleEntry = HAIRSTYLE_LIBRARY.find((h) => h.genders.length === 1 && h.genders[0] === 'female');
+      expect(femaleEntry).toBeDefined();
+
+      // Explicitly request male
+      const prompt = buildStylePreviewPrompt(femaleEntry!, 'male');
+      expect(prompt).toContain('young Korean male model');
+      expect(prompt).not.toContain('young Korean female model');
+    });
+  });
+});
+
+describe('buildFaceEditPrompt', () => {
+  it('returns a valid edit instruction prompt', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toBeDefined();
+    expect(typeof prompt).toBe('string');
+    expect(prompt.length).toBeGreaterThan(0);
+  });
+
+  it('includes style name from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain(entry.name.en);
+  });
+
+  it('includes length from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain(entry.length);
+  });
+
+  it('includes all hair types from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    for (const hairType of entry.hairType) {
+      expect(prompt).toContain(hairType);
+    }
+  });
+
+  it('includes all tags from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY.find((h) => h.tags.length > 0);
+    expect(entry).toBeDefined();
+    const prompt = buildFaceEditPrompt(entry!);
+    for (const tag of entry!.tags) {
+      expect(prompt).toContain(tag);
+    }
+  });
+
+  it('emphasizes hair-only edit with "Change ONLY the hair" instruction', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain('Change ONLY the hair');
+  });
+
+  it('includes instruction to preserve facial identity', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain('facial identity');
+  });
+
+  it('includes instruction to preserve skin tone', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain('Preserve skin tone');
+  });
+
+  it('includes instruction to preserve expression', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain('expression');
+  });
+
+  it('includes instruction to preserve clothing and background', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain('clothing');
+    expect(prompt).toContain('background');
+  });
+
+  it('prohibits text, watermarks, and logos', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).toContain('No text');
+    expect(prompt).toContain('watermarks');
+    expect(prompt).toContain('logos');
+  });
+
+  it('is deterministic: same entry produces identical prompt', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt1 = buildFaceEditPrompt(entry);
+    const prompt2 = buildFaceEditPrompt(entry);
+    expect(prompt1).toBe(prompt2);
+  });
+
+  it('returns different prompts for different catalog entries', () => {
+    const entry1 = HAIRSTYLE_LIBRARY[0];
+    const entry2 = HAIRSTYLE_LIBRARY[1];
+    const prompt1 = buildFaceEditPrompt(entry1);
+    const prompt2 = buildFaceEditPrompt(entry2);
+    expect(prompt1).not.toBe(prompt2);
+  });
+
+  it('does not contain template placeholders or unresolved variables', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildFaceEditPrompt(entry);
+    expect(prompt).not.toContain('${');
+    expect(prompt).not.toContain('{');
+    expect(prompt).not.toContain('[object Object]');
   });
 });

@@ -3,7 +3,6 @@ import { z } from 'zod';
 import {
   success,
   error,
-  errorCodeToHttpStatus,
   type ApiErrorCode,
 } from '@/lib/api-envelope';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -15,9 +14,11 @@ import {
 } from '@/lib/hairstyle-recommendation';
 import {
   buildStylePreviewPrompt,
+  buildFaceEditPrompt,
   getHairstyleById,
 } from '@/lib/hairstyle-recommendation';
 import { PreviewRequestSchema } from '@/lib/hairstyle-recommendation/schema';
+import { validateImage } from '@/lib/hairstyle-recommendation/image-validation';
 import { getImageGenerator } from '@/lib/ai/factory';
 import { AiError } from '@/lib/ai/types';
 
@@ -25,11 +26,18 @@ import { AiError } from '@/lib/ai/types';
  * POST /api/hairstyle/preview
  *
  * Server route handler: generates a style preview image for a hairstyle.
- * - Text-to-image only: generates a generic salon portrait, never user-face synthesis
- * - Ephemeral: image bytes are NEVER stored, logged, or persisted
- * - Rate-limited per IP at 30 requests/minute
- * - Returns typed ApiEnvelope with error codes mapping to HTTP status
- * - If IMAGE_PROVIDER is not configured, returns 503 IMAGE_GEN_DISABLED
+ * Two modes (rev 2):
+ * - Face-preserving edit: user photo + edit-capable provider → hair-only edit prompt
+ * - Generic render: text→image portrait (gender-matched when possible)
+ *
+ * CRITICAL — EPHEMERAL:
+ * - Image bytes are NEVER stored, logged, or persisted
+ * - User photo is kept in-memory only during generation, then discarded
+ * - No image data in error messages
+ *
+ * Rate-limited per IP at 30 requests/minute.
+ * Returns typed ApiEnvelope with error codes mapping to HTTP status.
+ * If IMAGE_PROVIDER is not configured, returns 503 IMAGE_GEN_DISABLED.
  */
 
 export async function POST(request: NextRequest) {
@@ -94,7 +102,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Check if image generator is available
+    // 5. Validate image if present (size/mime type check)
+    let imageData: { data: string; mimeType: string } | undefined;
+    if (previewRequest.image && previewRequest.mimeType) {
+      const validation = validateImage(previewRequest.image, previewRequest.mimeType);
+      if (!validation.ok) {
+        return NextResponse.json(
+          error(validation.errorCode, validation.message),
+          { status: validation.errorCode === 'IMAGE_TOO_LARGE' ? 413 : 415 }
+        );
+      }
+      // Extract base64 payload for passing to provider
+      const payload = previewRequest.image.startsWith('data:')
+        ? previewRequest.image.split(',')[1]
+        : previewRequest.image;
+      imageData = { data: payload, mimeType: previewRequest.mimeType };
+    }
+
+    // 6. Check if image generator is available
     const generator = getImageGenerator();
     if (!generator) {
       return NextResponse.json(
@@ -106,13 +131,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Build prompt from catalog data only (never from user input)
-    const prompt = buildStylePreviewPrompt(catalogEntry);
+    // 7. Branch: determine prompt and referenceImage based on capabilities
+    // If user provided a photo AND generator supports edits → face-preserving path
+    // Otherwise → generic text→image path
+    let prompt: string;
+    let referenceImage: { data: string; mimeType: string } | undefined;
 
-    // 7. Generate image with timeout protection
+    if (imageData && generator.supportsImageEdit) {
+      // Face-preserving edit: build hair-only edit prompt + attach reference
+      prompt = buildFaceEditPrompt(catalogEntry);
+      referenceImage = imageData;
+    } else {
+      // Generic render: build salon portrait prompt (gender-matched if available)
+      prompt = buildStylePreviewPrompt(catalogEntry, previewRequest.gender);
+      referenceImage = undefined;
+    }
+
+    // 8. Generate image with timeout protection
     let result;
     try {
-      result = await generateImageWithTimeout(generator, prompt);
+      result = await generateImageWithTimeout(
+        generator,
+        prompt,
+        referenceImage
+      );
     } catch (err) {
       // Map AiError to typed response
       if (err instanceof AiError) {
@@ -133,8 +175,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 8. Return success
+    // 9. Return success
     // EPHEMERAL: Image bytes remain in-memory only, never stored or logged
+    // User photo is discarded after generation
     return NextResponse.json(
       success({
         image: `data:${result.mimeType};base64,${result.data}`,
@@ -146,7 +189,7 @@ export async function POST(request: NextRequest) {
     // Unexpected error — log server-side WITHOUT image data or prompts
     const errorMsg =
       err instanceof Error ? err.message : 'Unknown error occurred';
-    console.error('Preview route error (generic):', errorMsg);
+    console.error('Preview route error:', errorMsg);
 
     return NextResponse.json(
       error('INTERNAL', 'An unexpected error occurred'),
@@ -163,6 +206,7 @@ export async function POST(request: NextRequest) {
 async function generateImageWithTimeout(
   generator: any,
   prompt: string,
+  referenceImage?: { data: string; mimeType: string },
   timeoutMs = 180_000
 ) {
   const controller = new AbortController();
@@ -173,6 +217,7 @@ async function generateImageWithTimeout(
       prompt,
       width: PREVIEW_IMAGE_WIDTH,
       height: PREVIEW_IMAGE_HEIGHT,
+      referenceImage,
     });
     clearTimeout(timeoutId);
     return result;

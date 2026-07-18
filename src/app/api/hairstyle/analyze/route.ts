@@ -3,17 +3,14 @@ import { z } from 'zod';
 import {
   success,
   error,
-  errorCodeToHttpStatus,
-  type ApiErrorCode,
 } from '@/lib/api-envelope';
 import { checkRateLimit } from '@/lib/rate-limit';
 import {
   RATE_LIMIT_ANALYZE_PER_MIN,
-  MAX_IMAGE_BYTES,
-  ALLOWED_IMAGE_TYPES,
   parseAnalyzeRequest,
   type FaceAnalysis,
 } from '@/lib/hairstyle-recommendation';
+import { validateImage, extractBase64Payload } from '@/lib/hairstyle-recommendation/image-validation';
 import { getProvider } from '@/lib/hairstyle-recommendation/ai';
 
 /**
@@ -77,27 +74,17 @@ export async function POST(request: NextRequest) {
 
     const { image, mimeType, locale } = analyzeRequest;
 
-    // 4. Guard: decode size check
-    // Estimate decoded size (base64 adds ~33% overhead when decoding)
-    const dataToCheck = image.startsWith('data:')
-      ? image.split(',')[1]
-      : image;
-    const decodedSize = Math.ceil((dataToCheck.length / 4) * 3);
-
-    if (decodedSize > MAX_IMAGE_BYTES) {
+    // 4. Validate image: size and MIME type
+    const validation = validateImage(image, mimeType);
+    if (!validation.ok) {
       return NextResponse.json(
-        error('IMAGE_TOO_LARGE', `Image exceeds ${MAX_IMAGE_BYTES / 1024 / 1024}MB limit`),
-        { status: 413 }
+        error(validation.errorCode, validation.message),
+        { status: validation.errorCode === 'IMAGE_TOO_LARGE' ? 413 : 415 }
       );
     }
 
-    // 5. Guard: MIME type check
-    if (!ALLOWED_IMAGE_TYPES.includes(mimeType as any)) {
-      return NextResponse.json(
-        error('INVALID_IMAGE', `Unsupported image type: ${mimeType}`),
-        { status: 415 }
-      );
-    }
+    // 5. Extract base64 payload for provider
+    const dataToCheck = extractBase64Payload(image);
 
     // 6. Call provider (image is kept in memory ONLY, never persisted).
     // The provider key is resolved inside getProvider() from the Cloudflare
@@ -133,7 +120,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 8. Return success
+    // 7. Return success
     // IMAGE IS DISCARDED HERE (not returned, not logged, not persisted)
     return NextResponse.json(success(analysis), { status: 200 });
   } catch (err) {

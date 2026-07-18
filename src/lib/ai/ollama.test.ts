@@ -168,6 +168,72 @@ describe('OllamaClient', () => {
         expect.any(Object)
       );
     });
+
+    it('passes through gender field from provider response', async () => {
+      const genderSchema = z.object({
+        gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),
+      });
+
+      const responseJson = { gender: 'female' };
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          message: { content: JSON.stringify(responseJson) },
+        }),
+      } as any);
+
+      const client = new OllamaClient();
+      const result = await client.generateJson({
+        prompt: 'analyze gender',
+        schema: genderSchema,
+      });
+
+      expect(result.gender).toBe('female');
+    });
+
+    it('coerces missing gender to unknown', async () => {
+      const genderSchema = z.object({
+        gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),
+      });
+
+      const responseJson = {}; // No gender field
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          message: { content: JSON.stringify(responseJson) },
+        }),
+      } as any);
+
+      const client = new OllamaClient();
+      const result = await client.generateJson({
+        prompt: 'analyze gender',
+        schema: genderSchema,
+      });
+
+      expect(result.gender).toBe('unknown');
+    });
+
+    it('coerces invalid gender to unknown', async () => {
+      const genderSchema = z.object({
+        gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),
+      });
+
+      const responseJson = { gender: 'not-a-gender' };
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          message: { content: JSON.stringify(responseJson) },
+        }),
+      } as any);
+
+      const client = new OllamaClient();
+      const result = await client.generateJson({
+        prompt: 'analyze gender',
+        schema: genderSchema,
+      });
+
+      expect(result.gender).toBe('unknown');
+    });
   });
 
   describe('generateImage', () => {

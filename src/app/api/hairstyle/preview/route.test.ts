@@ -208,6 +208,224 @@ describe('POST /api/hairstyle/preview', () => {
     });
   });
 
+  describe('413/415 - Image Validation', () => {
+    it('should return 413 when image exceeds MAX_IMAGE_BYTES', async () => {
+      // Arrange: Create a fake oversized base64 image
+      const oversizedBase64 = 'A'.repeat(7 * 1024 * 1024); // 7 MB in base64
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          image: oversizedBase64,
+          mimeType: 'image/jpeg',
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+      const json = await response.json();
+
+      // Assert
+      expect(response.status).toBe(413);
+      expect(json.ok).toBe(false);
+      expect(json.error.code).toBe('IMAGE_TOO_LARGE');
+      expect(json.data).toBeNull();
+    });
+
+    it('should return 400 when image mimeType is unsupported (schema validation)', async () => {
+      // Arrange
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+
+      // Use an mimeType not in ALLOWED_IMAGE_TYPES
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          image: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+          mimeType: 'image/gif', // Not in ALLOWED_IMAGE_TYPES
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+      const json = await response.json();
+
+      // Assert: Schema validation rejects unsupported mimeType at 400 level
+      expect(response.status).toBe(400);
+      expect(json.ok).toBe(false);
+      expect(json.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('should return 400 when image is provided without mimeType (schema refinement)', async () => {
+      // Arrange
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          image: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+          // mimeType is missing — should fail schema validation
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+      const json = await response.json();
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(json.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  describe('Face-Preserving Edit Path (Rev 2)', () => {
+    it('should pass referenceImage to generator when image+supportsImageEdit=true', async () => {
+      // Arrange: Mock generator with edit capability
+      const mockGenerator = {
+        supportsImageEdit: true,
+        generateImage: vi.fn().mockResolvedValue({
+          data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+          mimeType: 'image/png' as const,
+        }),
+      };
+
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+      vi.mocked(getImageGenerator).mockReturnValue(mockGenerator);
+
+      const userImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          image: userImageBase64,
+          mimeType: 'image/png',
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+
+      // Assert: Generator should be called with referenceImage and face-edit prompt
+      expect(response.status).toBe(200);
+      const callArgs = mockGenerator.generateImage.mock.calls[0][0];
+      expect(callArgs).toBeDefined();
+      expect(callArgs.prompt.toLowerCase()).toContain('preserve'); // face-edit prompt
+      expect(callArgs.referenceImage).toBeDefined();
+      expect(callArgs.referenceImage.data).toBe(userImageBase64);
+      expect(callArgs.referenceImage.mimeType).toBe('image/png');
+    });
+
+    it('should NOT pass referenceImage when supportsImageEdit=false', async () => {
+      // Arrange: Mock generator WITHOUT edit capability
+      const mockGenerator = {
+        supportsImageEdit: false,
+        generateImage: vi.fn().mockResolvedValue({
+          data: 'IMAGEDATA',
+          mimeType: 'image/png' as const,
+        }),
+      };
+
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+      vi.mocked(getImageGenerator).mockReturnValue(mockGenerator);
+
+      const userImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          image: userImageBase64,
+          mimeType: 'image/png',
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+      const json = await response.json();
+
+      // Assert: Generator should NOT be called with referenceImage
+      expect(response.status).toBe(200);
+      expect(mockGenerator.generateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          referenceImage: undefined,
+        })
+      );
+    });
+  });
+
+  describe('Gender Parameter (Rev 2)', () => {
+    it('should pass gender to buildStylePreviewPrompt when provided', async () => {
+      // Arrange
+      const mockGenerator = {
+        supportsImageEdit: false,
+        generateImage: vi.fn().mockResolvedValue({
+          data: 'IMAGEDATA',
+          mimeType: 'image/png' as const,
+        }),
+      };
+
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+      vi.mocked(getImageGenerator).mockReturnValue(mockGenerator);
+
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          gender: 'male',
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+
+      // Assert: Prompt should contain gender-specific content
+      expect(response.status).toBe(200);
+      expect(mockGenerator.generateImage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('male'),
+        })
+      );
+    });
+
+    it('should not require gender parameter', async () => {
+      // Arrange
+      const mockGenerator = {
+        supportsImageEdit: false,
+        generateImage: vi.fn().mockResolvedValue({
+          data: 'IMAGEDATA',
+          mimeType: 'image/png' as const,
+        }),
+      };
+
+      vi.mocked(checkRateLimit).mockResolvedValue({ allowed: true });
+      vi.mocked(getImageGenerator).mockReturnValue(mockGenerator);
+
+      const request = new NextRequest('http://localhost/api/hairstyle/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          hairstyleId: HAIRSTYLE_LIBRARY[0].id,
+          locale: 'ko',
+          // gender omitted
+        }),
+      });
+
+      // Act
+      const response = await POST(request);
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(mockGenerator.generateImage).toHaveBeenCalled();
+    });
+  });
+
   describe('429 - Rate Limit', () => {
     it('should return 429 when rate limit is exceeded', async () => {
       // Arrange

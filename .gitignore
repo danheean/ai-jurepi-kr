@@ -44,6 +44,12 @@ test-results/
 *.tsbuildinfo
 next-env.d.ts
 
+# Evals harness
+docs/services/beauty/hairstyle-recommendation/data/
+evals/.venv/
+evals/hairstyle/reports/
+evals/hairstyle/prompts.generated.json
+
 # Editors & OS
 .idea/
 .vscode/
@@ -51,3 +57,7 @@ next-env.d.ts
 *.swo
 .DS_Store
 *.pem
+
+# public repo hygiene: celebrity-name labels stay local
+evals/hairstyle/fixtures.json
+evals/**/__pycache__/

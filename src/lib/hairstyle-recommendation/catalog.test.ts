@@ -26,6 +26,9 @@ describe('HAIRSTYLE_LIBRARY', () => {
       expect(entry.name.ko).toBeDefined();
       expect(entry.name.en).toBeDefined();
       expect(entry.suitableFaceShapes.length).toBeGreaterThan(0);
+      // Rev 2: genders field required, must have at least one of male/female
+      expect(entry.genders.length).toBeGreaterThan(0);
+      expect(entry.genders.every((g) => ['male', 'female'].includes(g))).toBe(true);
       expect(['feminine', 'masculine', 'neutral']).toContain(
         entry.preference
       );

@@ -38,6 +38,16 @@ export const OCCASIONS = ['daily', 'business', 'event', 'seasonal'] as const;
 
 export type Occasion = (typeof OCCASIONS)[number];
 
+// Genders for recommendation (2 variants per SPEC rev 2)
+export const GENDERS = ['male', 'female'] as const;
+
+export type Gender = (typeof GENDERS)[number];
+
+// Genders for analysis output (3 variants per SPEC rev 2: includes 'unknown')
+export const ANALYSIS_GENDERS = ['male', 'female', 'unknown'] as const;
+
+export type AnalysisGender = (typeof ANALYSIS_GENDERS)[number];
+
 // Image constraints per SPEC
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_EDGE_PX = 1024; // longest edge

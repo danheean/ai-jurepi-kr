@@ -192,5 +192,68 @@ describe('GeminiClient', () => {
         })
       ).rejects.toThrow(AiError);
     });
+
+    it('passes through gender field from provider response', async () => {
+      const genderSchema = z.object({
+        gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),
+      });
+
+      const responseJson = { gender: 'male' };
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify(responseJson),
+        },
+      });
+
+      const client = new GeminiClient('test-key');
+      const result = await client.generateJson({
+        prompt: 'analyze gender',
+        schema: genderSchema,
+      });
+
+      expect(result.gender).toBe('male');
+    });
+
+    it('coerces missing gender to unknown', async () => {
+      const genderSchema = z.object({
+        gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),
+      });
+
+      const responseJson = {}; // No gender field
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify(responseJson),
+        },
+      });
+
+      const client = new GeminiClient('test-key');
+      const result = await client.generateJson({
+        prompt: 'analyze gender',
+        schema: genderSchema,
+      });
+
+      expect(result.gender).toBe('unknown');
+    });
+
+    it('coerces invalid gender to unknown', async () => {
+      const genderSchema = z.object({
+        gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),
+      });
+
+      const responseJson = { gender: 'invalid-value' };
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify(responseJson),
+        },
+      });
+
+      const client = new GeminiClient('test-key');
+      const result = await client.generateJson({
+        prompt: 'analyze gender',
+        schema: genderSchema,
+      });
+
+      expect(result.gender).toBe('unknown');
+    });
   });
 });

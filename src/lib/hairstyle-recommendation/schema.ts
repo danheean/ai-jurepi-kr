@@ -15,6 +15,8 @@ import {
   LENGTHS,
   HAIR_TYPES,
   OCCASIONS,
+  GENDERS,
+  ANALYSIS_GENDERS,
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
 } from './constants';
@@ -27,14 +29,20 @@ export const PreferenceSchema = z.enum(PREFERENCES);
 export const LengthSchema = z.enum(LENGTHS);
 export const HairTypeSchema = z.enum(HAIR_TYPES);
 export const OccasionSchema = z.enum(OCCASIONS);
+export const GenderSchema = z.enum(GENDERS);
+export const AnalysisGenderSchema = z.enum(ANALYSIS_GENDERS);
 export const AllowedImageTypeSchema = z.enum(ALLOWED_IMAGE_TYPES);
 
 /**
  * FaceAnalysis: output from analyzeFace()
+ *
+ * Gender field (rev 2): perceived gender from photo (male/female/unknown).
+ * Missing or invalid provider output clamps to 'unknown' via .catch().
  */
 export const FaceAnalysisSchema = z.object({
   faceShape: FaceShapeSchema,
   confidence: z.number().min(0).max(1),
+  gender: AnalysisGenderSchema.catch('unknown'),
   features: z.array(z.string()).max(5),
   notes: z.string().max(240).optional(),
 });
@@ -43,9 +51,13 @@ export type FaceAnalysis = z.infer<typeof FaceAnalysisSchema>;
 
 /**
  * RecommendInput: user attributes for recommendation
+ *
+ * Gender field (rev 2): optional (male/female). When set, narrows catalog matches.
+ * Auto-filled from analysis result unless 'unknown', user-overridable.
  */
 export const RecommendInputSchema = z.object({
   faceShape: FaceShapeSchema,
+  gender: GenderSchema.optional(),
   preference: PreferenceSchema.default('neutral'),
   length: LengthSchema.optional(),
   hairType: HairTypeSchema.optional(),
@@ -75,11 +87,14 @@ export type Recommendation = z.infer<typeof RecommendationSchema>;
 
 /**
  * HairstyleLibraryEntry: catalog entry structure
+ *
+ * Rev 2: genders field (readonly array of male/female) tags which genders suit this style.
  */
 export const HairstyleLibraryEntrySchema = z.object({
   id: z.string(),
   name: z.object({ ko: z.string(), en: z.string() }),
   suitableFaceShapes: z.array(FaceShapeSchema).min(1),
+  genders: z.array(GenderSchema).min(1),
   preference: PreferenceSchema,
   length: LengthSchema,
   hairType: z.array(HairTypeSchema).min(1),
@@ -184,12 +199,23 @@ export type RecommendRequest = z.infer<typeof RecommendRequestSchema>;
 
 /**
  * POST /api/hairstyle/preview request
+ *
+ * Image fields (rev 2): optional user photo for face-preserving edit path.
+ * If image is present, mimeType is required.
+ * Gender: optional, steers generic-model prompt when no edit available.
  */
 export const PreviewRequestSchema = z
   .object({
     hairstyleId: z.string().min(1).max(100),
     locale: z.enum(['ko', 'en']),
+    image: z.string().optional(),
+    mimeType: AllowedImageTypeSchema.optional(),
+    gender: GenderSchema.optional(),
   })
+  .refine(
+    (data) => !data.image || data.mimeType,
+    'mimeType is required when image is present'
+  )
   .strict();
 
 export type PreviewRequest = z.infer<typeof PreviewRequestSchema>;

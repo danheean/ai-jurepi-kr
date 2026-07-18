@@ -61,3 +61,8 @@ export function getOllamaTextModel(): string {
 export function getOllamaImageModel(): string {
   return readRuntimeEnv('OLLAMA_IMAGE_MODEL') || 'x/z-image-turbo';
 }
+
+/** Gemini image generation model — 'gemini-2.5-flash-image' supports structured img generation */
+export function getGeminiImageModel(): string {
+  return readRuntimeEnv('GEMINI_IMAGE_MODEL') || 'gemini-2.5-flash-image';
+}

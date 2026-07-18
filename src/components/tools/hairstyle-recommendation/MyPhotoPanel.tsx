@@ -8,12 +8,16 @@ interface MyPhotoPanelProps {
   photoUrl: string;
   onReplace: () => void;
   onRemove: () => void;
+  facePreviewEnabled?: boolean;
+  onFacePreviewToggle?: (enabled: boolean) => void;
 }
 
 export default function MyPhotoPanel({
   photoUrl,
   onReplace,
   onRemove,
+  facePreviewEnabled = true,
+  onFacePreviewToggle,
 }: MyPhotoPanelProps) {
   const t = useTranslations('tools.hairstyle-recommendation');
 
@@ -47,6 +51,36 @@ export default function MyPhotoPanel({
           <X className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Face preview toggle */}
+      {onFacePreviewToggle && (
+        <div className="space-y-2 border-t border-hairline pt-3">
+          <div className="flex items-center gap-2">
+            <button
+              role="switch"
+              aria-checked={facePreviewEnabled}
+              onClick={() => onFacePreviewToggle(!facePreviewEnabled)}
+              className={`w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-outer focus-visible:ring-offset-2 ${
+                facePreviewEnabled
+                  ? 'bg-primary'
+                  : 'bg-surface-card border border-hairline'
+              }`}
+            >
+              <span
+                className={`block w-5 h-5 rounded-full bg-white transition-transform ${
+                  facePreviewEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+            <label className="text-sm font-body-strong text-charcoal cursor-pointer">
+              {t('workspace.facePreviewLabel')}
+            </label>
+          </div>
+          <p className="text-caption-sm text-mute">
+            {t('workspace.facePreviewNote')}
+          </p>
+        </div>
+      )}
 
       <div className="flex items-start gap-2 rounded-md bg-surface-soft p-3">
         <ShieldCheck className="w-4 h-4 text-success-deep flex-shrink-0 mt-0.5" />

@@ -8,11 +8,13 @@ import * as envModule from './env';
 
 vi.mock('./env');
 vi.mock('./gemini');
+vi.mock('./gemini-image');
 vi.mock('./ollama');
 
 import { getStructuredModel, getImageGenerator } from './factory';
 import { AiError } from './types';
 import { GeminiClient } from './gemini';
+import { GeminiImageClient } from './gemini-image';
 import { OllamaClient } from './ollama';
 
 describe('factory', () => {
@@ -43,6 +45,13 @@ describe('factory', () => {
   });
 
   describe('getImageGenerator', () => {
+    it('returns GeminiImageClient for gemini provider', () => {
+      vi.mocked(envModule.getImageProvider).mockReturnValue('gemini');
+
+      const result = getImageGenerator();
+      expect(result).toBeInstanceOf(GeminiImageClient);
+    });
+
     it('returns OllamaClient for ollama provider', () => {
       vi.mocked(envModule.getImageProvider).mockReturnValue('ollama');
 

@@ -22,6 +22,7 @@ describe('FaceAnalysisSchema', () => {
     const valid = {
       faceShape: 'oval',
       confidence: 0.85,
+      gender: 'male',
       features: ['symmetric', 'high-forehead'],
       notes: 'Clear face shape detected',
     };
@@ -420,12 +421,23 @@ describe('PreviewRequestSchema', () => {
     ).toThrow();
   });
 
-  it('rejects request with extra fields like referenceImage', () => {
+  it('accepts optional image, mimeType, and gender fields', () => {
+    const valid = {
+      hairstyleId: 'soft-layered-bob',
+      locale: 'ko',
+      image: 'data:image/jpeg;base64,/9j/...',
+      mimeType: 'image/jpeg',
+      gender: 'female',
+    };
+    expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('requires mimeType when image is present (refinement)', () => {
     expect(() =>
       PreviewRequestSchema.parse({
         hairstyleId: 'bob',
         locale: 'en',
-        referenceImage: { data: 'base64', mimeType: 'image/png' },
+        image: 'data:image/jpeg;base64,/9j/...',
       })
     ).toThrow();
   });
