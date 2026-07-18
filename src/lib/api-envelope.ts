@@ -16,6 +16,7 @@ export const ApiErrorCode = z.enum([
   'INVALID_IMAGE', // Wrong MIME type (415)
   'NO_FACE_DETECTED', // Provider business error (422)
   'RATE_LIMITED', // IP quota exceeded (429)
+  'IMAGE_GEN_DISABLED', // Image generation feature disabled (503)
   'AI_UNAVAILABLE', // API key missing or provider error (502)
   'INTERNAL', // Server crash (500)
 ]);
@@ -83,6 +84,8 @@ export function errorCodeToHttpStatus(code: ApiErrorCode): number {
       return 422;
     case 'RATE_LIMITED':
       return 429;
+    case 'IMAGE_GEN_DISABLED':
+      return 503;
     case 'AI_UNAVAILABLE':
       return 502;
     case 'INTERNAL':

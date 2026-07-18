@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildAnalyzePrompt, buildRecommendPrompt } from './prompt';
-import { matchCandidates } from './catalog';
+import { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt } from './prompt';
+import { matchCandidates, HAIRSTYLE_LIBRARY } from './catalog';
 import { MIN_RECS, MAX_RECS } from './constants';
 
 describe('buildAnalyzePrompt', () => {
@@ -263,5 +263,97 @@ describe('buildRecommendPrompt', () => {
     const prompt = buildRecommendPrompt(input, candidates, 'ko');
     expect(prompt).toContain('당신은');
     expect(prompt).toContain('추천');
+  });
+});
+
+describe('buildStylePreviewPrompt', () => {
+  it('includes style name (en) from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    expect(prompt).toContain(entry.name.en);
+  });
+
+  it('includes all tags from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    for (const tag of entry.tags) {
+      expect(prompt).toContain(tag);
+    }
+  });
+
+  it('includes hair length from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    expect(prompt).toContain(entry.length);
+  });
+
+  it('includes all hair types from catalog entry', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    for (const hairType of entry.hairType) {
+      expect(prompt).toContain(hairType);
+    }
+  });
+
+  it('includes "no text, watermarks, or logos" safety rule', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    expect(prompt).toContain('No text');
+    expect(prompt).toContain('watermarks');
+    expect(prompt).toContain('logos');
+  });
+
+  it('does not contain Korean characters (Hangul)', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    const hangulRegex = /[가-힣]/;
+    expect(prompt).not.toMatch(hangulRegex);
+  });
+
+  it('is deterministic: same entry produces identical prompt', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt1 = buildStylePreviewPrompt(entry);
+    const prompt2 = buildStylePreviewPrompt(entry);
+    expect(prompt1).toBe(prompt2);
+  });
+
+  it('returns different prompts for different catalog entries', () => {
+    const entry1 = HAIRSTYLE_LIBRARY[0];
+    const entry2 = HAIRSTYLE_LIBRARY[Math.min(1, HAIRSTYLE_LIBRARY.length - 1)];
+
+    if (entry1.id !== entry2.id) {
+      const prompt1 = buildStylePreviewPrompt(entry1);
+      const prompt2 = buildStylePreviewPrompt(entry2);
+      expect(prompt1).not.toBe(prompt2);
+    }
+  });
+
+  it('is marked as photorealistic salon portrait', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    expect(prompt).toContain('Photorealistic');
+    expect(prompt).toContain('salon');
+    expect(prompt).toContain('portrait');
+  });
+
+  it('requests professional photography quality', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    expect(prompt).toContain('Professional');
+  });
+
+  it('specifies clear, well-lit salon environment', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    expect(prompt).toContain('salon environment');
+  });
+
+  it('does not include user-supplied free text (safe from prompt injection)', () => {
+    const entry = HAIRSTYLE_LIBRARY[0];
+    const prompt = buildStylePreviewPrompt(entry);
+    // Prompt should only use catalog fields, not any arbitrary user input
+    // Verify it doesn't contain patterns that would come from user input
+    expect(prompt).not.toContain('{');
+    expect(prompt).not.toContain('${');
   });
 });

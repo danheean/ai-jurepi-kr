@@ -1,19 +1,19 @@
 # Hairstyle Recommendation — AI Face-Shape Style Advisor — Service SPEC
 
-> This document is the **canonical (English) source** consumed by AI coding agents. The Korean translation lives in [`SPEC_KR.md`](SPEC_KR.md); keep both in sync when either changes. **Synchronized to ai.jurepi.kr DESIGN.md (2026-07-17): single brand-red accent, Pretendard, flat elevation, 16/32/pill radius, no per-tool accents.**
+> This document is the **canonical (English) source** consumed by AI coding agents. The Korean translation lives in [`SPEC_KR.md`](SPEC_KR.md); keep both in sync when either changes. **Synchronized to ai.jurepi.kr DESIGN.md (2026-07-18): brand-red primary + 6-category accents (beauty = rose), Gmarket Sans display + Pretendard body, 16/32/pill radius. Updated 2026-07-18: wide tool-page shell, always-visible photo panel, AI style-preview image generation (platform `src/lib/ai` capability layer; dev = Ollama).**
 >
-> Build specification for **Hairstyle Recommendation** (헤어스타일 추천) — the **first AI tool** on the new **ai.jurepi.kr** hub (an AI-powered sibling of the existing no-AI [apps.jurepi.kr](https://apps.jurepi.kr)). The user either **uploads a face photo** (analyzed by an AI vision model) or **picks their face shape manually**, refines a few attributes (preference, hair length, hair type, occasion), and receives **3–6 recommended hairstyles** — each with a "why it suits you" explanation, styling/maintenance tips, and a **curated reference image**. It is **recommendation-only**: the AI returns **text**, and every image shown comes from a curated static library. No image of the user's face is ever generated, stored, or logged.
+> Build specification for **Hairstyle Recommendation** (헤어스타일 추천) — the **first AI tool** on the new **ai.jurepi.kr** hub (an AI-powered sibling of the existing no-AI [apps.jurepi.kr](https://apps.jurepi.kr)). The user either **uploads a face photo** (analyzed by an AI vision model) or **picks their face shape manually**, refines a few attributes (preference, hair length, hair type, occasion), and receives **3–6 recommended hairstyles** — each with a "why it suits you" explanation, styling/maintenance tips, and a **curated reference image**. The AI returns **structured text**; every card shows a curated reference image immediately, and — when an image provider is enabled — an **AI-generated style preview** (a generic model portrait of the hairstyle, generated from text only) progressively replaces it. **No image of the user's face is ever generated, stored, or logged** (face try-on remains Phase 2).
 >
-> Internal service codename: `hairstyle-recommendation`. Registry id: `hairstyle-recommendation`. Public URL slug: `/[locale]/tools/hairstyle-recommendation`. Category: `beauty`. **Note: accent is NOT tool-specific; all tools share the single brand accent.**
+> Internal service codename: `hairstyle-recommendation`. Registry id: `hairstyle-recommendation`. Public URL slug: `/[locale]/tools/hairstyle-recommendation`. Category: `beauty`. Accent: `rose` (6-category accent system, 2026-07-18).
 >
 > **CRITICAL — SERVER-SIDE AI, NOT STATIC EXPORT.** apps.jurepi.kr is a static export served by an assets-only Worker (no server). This tool **requires a server** to hold the AI key and run inference, so **ai.jurepi.kr is deployed on Cloudflare Workers via OpenNext** (`@opennextjs/cloudflare`), which keeps the identical Next.js 15 / React 19 / Tailwind v4 / next-intl stack and DESIGN system but enables **route handlers** (`src/app/api/hairstyle/**`). All model calls happen server-side; the API key never reaches the client.
 >
-> **CRITICAL — RECOMMENDATION-ONLY (NO IMAGE GENERATION).** This build performs **no** generative try-on. The AI produces structured **text** (face-shape analysis + reasoning + tips + hairstyle IDs). Reference images are matched from a **curated static library** keyed by `(hairstyleId, gender, faceShape)`. Generative virtual try-on is explicitly **Phase 2** — the provider seam and `Recommendation` shape are designed so a `generateTryOn()` method and a result-image slot can be added later without rework.
+> **CRITICAL — TEXT RECOMMENDATIONS + STYLE PREVIEWS (NO USER-FACE GENERATION).** The AI produces structured **text** (face-shape analysis + reasoning + tips + hairstyle IDs); reference images come from the **curated static library**. Additionally (2026-07-18), when `IMAGE_PROVIDER` is set, each recommendation card auto-generates a **style preview image** via the platform `ImageGenerator` port — a text→image render of the hairstyle on a generic model, built ONLY from catalog data (never from user input, never the user's face). If generation is disabled or fails, cards quietly keep the curated image. Generative virtual try-on (user's face) is explicitly **Phase 2** — the `ImageGenerator.referenceImage` seam exists for it.
 >
 > **CRITICAL — EPHEMERAL PHOTO, PRIVACY-FIRST.** This is a face-photo tool. The uploaded image is **resized client-side**, streamed to the provider for a **single** analysis call, and **never persisted server-side, never logged, and discarded immediately** after the response. This is a hard rule (see `<security_considerations>`) and is surfaced in the UI.
 >
 > This SPEC covers the **tool itself**. The shared shell (header/footer/locale/theme/consent), tool registry, SEO/ad infrastructure, and design tokens are provided by the platform. The ai.jurepi.kr platform `SPEC.md` / `DESIGN.md` define the visual truth:
-> - Design system (single source of visual truth): **ai.jurepi.kr `docs/DESIGN.md`** (brand red `#e60023`, warm-cream neutral surfaces canvas #ffffff / surface-soft #fbfbf9 / surface-card #f6f6f3, Pretendard display/body, 16px md / 32px lg / pill radius, flat elevation, single brand accent—no per-tool accents, no honey-gold, no per-category tint).
+> - Design system (single source of visual truth): **ai.jurepi.kr `docs/DESIGN.md`** (brand red `#e60023` primary, warm-cream neutral surfaces canvas #ffffff / surface-soft #fbfbf9 / surface-card #f6f6f3, Gmarket Sans display + Pretendard body, 16px md / 32px lg / pill radius, 6-category accent system — beauty/this tool = rose; wide tool-page shell standard max-w-screen-xl 1280px).
 > - Tool registry pattern: apps.jurepi.kr `src/tools/registry.ts` + `src/tools/types.ts` (`ToolMeta` shape).
 > - i18n routing: next-intl, locales `['ko','en']`, `defaultLocale: 'ko'`, `localePrefix: 'always'`.
 
@@ -25,20 +25,20 @@
 <overview>
 Hairstyle Recommendation helps a user discover haircuts that suit their face. There are two entry paths. In the **photo path**, the user uploads or captures a face photo; an AI vision model analyzes the **face shape** (oval, round, square, heart, oblong, diamond, triangle) plus salient features, and returns a structured analysis. In the **no-photo path**, the user simply selects their face shape from labeled illustrations — no image, no upload, instant. Either way, the user then refines a few attributes (style preference, current hair length, hair type, occasion) and receives a set of tailored recommendations.
 
-Each recommendation is a card: the hairstyle name (ko/en), a short "why it suits your face shape" explanation written by the AI, two or three concrete styling/maintenance tips, and a **curated reference photo** so the user can see the look. The user can regenerate for fresh ideas, copy a shareable summary, and open a guide. The whole flow is fast, login-free, and mobile-first — a single-page interaction mounted on the platform's SSG shell.
+Each recommendation is a card: the hairstyle name (ko/en), a short "why it suits your face shape" explanation written by the AI, two or three concrete styling/maintenance tips, and a **curated reference photo** so the user can see the look — progressively upgraded to an **AI-generated style preview** when image generation is enabled. The uploaded photo stays visible in a persistent "My photo" panel throughout the flow. The user can regenerate for fresh ideas, copy a shareable summary, and open a guide. The whole flow is fast, login-free, and mobile-first — a single-page interaction mounted on the platform's SSG shell.
 
 CRITICAL (server-side AI): unlike apps.jurepi.kr (static export, no server), this tool calls an AI model, so ai.jurepi.kr runs on **Cloudflare Workers via OpenNext**. Two **route handlers** do the work: `POST /api/hairstyle/analyze` (image → face analysis) and `POST /api/hairstyle/recommend` (attributes → recommendations). The AI key lives only in the server environment; the browser never sees it and never calls the provider directly.
 
-CRITICAL (recommendation-only, no generation): the AI returns **text and IDs only**. All hairstyle imagery is served from a **curated static library** (`public/hairstyles/**`) matched by `(hairstyleId, gender, faceShape)`. There is no synthesis of the user's face. This keeps the tool free to run and privacy-safe. Generative try-on is Phase 2.
+CRITICAL (no user-face synthesis): the recommendation AI returns **text and IDs only**. Curated imagery (`public/hairstyles/**`) renders immediately on every card; when IMAGE_PROVIDER is enabled, a **style preview** (text→image, generic model, prompt built ONLY from catalog data) is auto-generated per card via `POST /api/hairstyle/preview` and fades in progressively (client concurrency 2). There is never synthesis of the user's face. Try-on is Phase 2.
 
 CRITICAL (ephemeral, privacy-first): the face photo is resized in the browser (longest edge ≤ 1024px, JPEG q≈0.85), sent once to the analyze endpoint, forwarded to the provider for a single call, and then discarded. No image bytes are written to disk, cache, KV, R2, or logs. The privacy guarantee is stated in the UI next to the uploader.
 
-CRITICAL (provider-swappable): all model access goes through a single `HairstyleAI` interface with a default `GeminiProvider`. The active provider is chosen by the `AI_PROVIDER` env var. Adding a provider is one new file implementing the interface; route handlers and UI never change.
+CRITICAL (provider-swappable): all model access goes through the `HairstyleAI` port, with adapters composed from the platform capability layer (`src/lib/ai/` — StructuredModel + ImageGenerator; GeminiClient frontier / OllamaClient open-source). `AI_PROVIDER` picks the analysis/recommendation provider (gemini | ollama); `IMAGE_PROVIDER` independently picks the image-generation provider (ollama | unset = disabled). Dev runs fully on laptop Ollama at zero API cost; adding a provider is one new file; route handlers and UI never change.
 </overview>
 
 <platform_integration>
   - Route: /[locale]/tools/hairstyle-recommendation (SSG shell + client tool; registry slug "hairstyle-recommendation", id "hairstyle-recommendation", status "live", category "beauty").
-  - API routes (server, OpenNext Worker runtime): POST /api/hairstyle/analyze, POST /api/hairstyle/recommend. Node-compatible route handlers; NOT statically exported.
+  - API routes (server, OpenNext Worker runtime): POST /api/hairstyle/analyze, POST /api/hairstyle/recommend, POST /api/hairstyle/preview (style-preview image generation; 503 IMAGE_GEN_DISABLED when no image provider is configured). Node-compatible route handlers; NOT statically exported.
   - Provided by the platform (do NOT reimplement): app shell (Header/Footer/LocaleSwitcher/ThemeToggle), ConsentBanner, AdSlot, Toast system, design tokens (tokens.css ↔ DESIGN.md), i18n runtime, Error Boundary around the tool module, SEO metadata + JSON-LD builders, breadcrumb, ShareButtons.
   - Consumes: i18n namespace `tools.hairstyle-recommendation.*` (UI chrome: uploader labels, attribute labels + option labels, result labels, tips heading, empty/loading/error states, privacy notice, how-to, FAQ, share, breadcrumb). Also requires top-level `tools.hairstyle-recommendation.title` / `.description` (home card, footer, search). Face-shape names, hairstyle names, reasons, and tips that come from the model/catalog are localized in the catalog data + prompt, NOT in the i18n message files.
   - Platform dependency (NEW category + server): (1) add `'beauty'` to `ToolCategory`; (2) add ONE `ToolMeta` registry entry (no tool-specific accent; all tools use brand red); (3) add slug→component branch + generateMetadata branch in the tool route; (4) add the `content`/sitemap block for this tool; (5) FIRST tool to require the OpenNext server runtime + the `src/app/api/**` surface + provider env wiring — establish this once, reuse for every future AI tool.
@@ -53,7 +53,11 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
     - Attribute refinement (both paths): preference (feminine/masculine/neutral), hair length (short/medium/long), hair type (straight/wavy/curly/coily), occasion (daily/business/event/seasonal). Sensible defaults; all optional except faceShape.
     - Curated static hairstyle library (`public/hairstyles/**` + `catalog.ts`): ≥ 24 entries spanning all face shapes × preferences, each with a licensed/credited reference image; match logic selects/orders candidates for the AI to choose from and supplies the image for each returned hairstyleId.
     - `HairstyleAI` provider abstraction with default `GeminiProvider`; `AI_PROVIDER` env selects the impl; structured-JSON prompt with validation + guardrails.
-    - Result UI: analysis card (face shape + confidence + features) + recommendation grid (3–6 cards: name, reason, tips, reference image). Regenerate, copy-summary/share, reset.
+    - Result UI: analysis card (face shape + confidence + features) + recommendation grid (3–6 cards: name, reason, tips, reference image → AI style preview). Regenerate, copy-summary/share, reset.
+    - Persistent "My photo" panel (2026-07-18): after upload the photo remains visible (object URL, in-memory only) through attributes → results, with replace/remove actions; sticky side rail (desktop) / compact sticky chip (mobile).
+    - Two-column workspace (2026-07-18): grid-cols-1 lg:grid-cols-3 — MAIN (2/3): stage flow; RAIL (1/3, lg:sticky): MyPhotoPanel + AnalysisCard + AttributeSelectors + primary CTA.
+    - `POST /api/hairstyle/preview` (2026-07-18): per-card style-preview generation via the platform ImageGenerator port — prompt built server-side from catalog data only; 768×768; rate limit 30/min/IP; ephemeral (image bytes never stored/logged); disabled → 503 IMAGE_GEN_DISABLED with quiet client fallback.
+    - Dev inference on laptop Ollama (AI_PROVIDER=ollama, IMAGE_PROVIDER=ollama): qwen3-vl vision analysis, qwen3.5 text recommendations, x/z-image-turbo image generation.
     - States: idle, uploading, analyzing (skeleton), recommending (skeleton), success, and every error (see error_handling). CLS-safe reserved heights.
     - Privacy notice inline at the uploader ("Your photo is analyzed once and never stored.") + a "no photo? pick your face shape" affordance.
     - Rate limiting on both endpoints; typed error envelope; input validation with zod on the server.
@@ -62,7 +66,7 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
   </in_scope>
   <out_of_scope>
     - App shell, header/footer, locale switcher, theme toggle, consent banner, ad loading, sitemap/robots mechanism, tool registry mechanism (all platform).
-    - **Generative virtual try-on** — synthesizing the user's face with a new hairstyle. No image generation of any kind in this build. (Phase 2.)
+    - **Generative virtual try-on** — synthesizing the user's face with a new hairstyle. Style previews are generic-model text→image renders only; the user's photo is NEVER sent to an image model. (Phase 2 — `ImageGenerator.referenceImage` seam reserved.)
     - Storing, caching, or logging the uploaded photo anywhere (KV, R2, D1, disk, logs). Ephemeral-only.
     - Accounts / login / saved history / cross-device sync / result persistence beyond a shareable URL summary.
     - Real-time face landmark detection in the browser, AR overlays, live camera preview effects.
@@ -70,7 +74,7 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
     - Medical/dermatological claims (hair loss diagnosis, scalp treatment).
   </out_of_scope>
   <future_considerations>
-    - **Generative virtual try-on (Phase 2):** add `generateTryOn(image, hairstyleId)` to `HairstyleAI`, a result-image slot on the recommendation card, and an image-gen provider (e.g. Gemini image editing). Same UI shell, opt-in per card.
+    - **Generative virtual try-on (Phase 2):** pass the user photo as `ImageGenerator.referenceImage` (seam already in the platform port) behind an `IMAGE_TRYON_ENABLED` flag, with an opt-in "Try it on me" action per card. Requires an edit-capable provider (Workers AI flux-2-klein supports editing; Ollama img2img pending an upstream source-image regression fix). Same UI shell.
     - Color/hair-dye suggestions matched to skin tone (Phase 2).
     - Save/compare shortlists via localStorage (Phase 2).
     - Seasonal / trending style packs curated over time (Phase 3).
@@ -89,7 +93,7 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
   <tool_specific>
     <runtime>Cloudflare Workers via OpenNext (@opennextjs/cloudflare, latest) — enables server route handlers. Replaces apps.jurepi.kr's static export for this hub.</runtime>
     <ai_sdk>@google/genai (Google Gen AI SDK for JS, latest) — used only inside GeminiProvider on the server. Model: gemini-2.5-flash (vision + text, structured JSON output).</ai_sdk>
-    <ai_abstraction>Local interface `HairstyleAI` (src/lib/hairstyle-recommendation/ai/types.ts) + factory (index.ts) selecting by AI_PROVIDER. No provider SDK is imported outside its own provider file.</ai_abstraction>
+    <ai_abstraction>Local port `HairstyleAI` + factory (ai/index.ts) selecting by AI_PROVIDER (gemini | ollama). Adapters are thin compositions over the platform capability layer `src/lib/ai/` (StructuredModel + ImageGenerator; GeminiClient / OllamaClient + shared guardrails). No provider SDK/fetch outside adapter+client files. Style previews use `getImageGenerator()` (IMAGE_PROVIDER) — independent of the analysis provider.</ai_abstraction>
     <image_resize>Browser canvas downscale (no library) — createImageBitmap + OffscreenCanvas/Canvas → toBlob('image/jpeg', 0.85). Guard longest edge ≤ 1024px.</image_resize>
     <rate_limit>Cloudflare Workers KV or in-memory token bucket per IP (see security). KV binding name: RATE_LIMIT_KV (optional; falls back to per-isolate limiter if unbound).</rate_limit>
     <note>NO database. NO photo storage. The ONLY stateful platform binding is the optional rate-limit KV, which stores counters keyed by hashed IP — never image data.</note>
@@ -108,7 +112,7 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
     <description>Selects the HairstyleAI implementation (server-only)</description>
     <required>false</required>
     <example>gemini</example>
-    <note>Defaults to "gemini" when unset. Enum: gemini (extend as providers are added).</note>
+    <note>Defaults to "gemini" when unset. Enum: gemini, ollama (extend as providers are added). Dev convention: ollama.</note>
   </variable>
   <variable>
     <name>GEMINI_API_KEY</name>
@@ -116,6 +120,19 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
     <required>true</required>
     <example>AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</example>
     <note>CRITICAL: server-only. NEVER prefix with NEXT_PUBLIC_. Never referenced in client bundles. Validate presence at request time; return AI_UNAVAILABLE if missing.</note>
+  </variable>
+  <variable>
+    <name>IMAGE_PROVIDER</name>
+    <description>Image-generation provider for style previews (server-only). Unset/none = preview generation disabled → /api/hairstyle/preview returns 503 IMAGE_GEN_DISABLED and the UI quietly keeps curated imagery.</description>
+    <required>false</required>
+    <example>ollama</example>
+    <note>Enum: ollama (dev). Production image provider is a deferred decision — deployed site keeps image generation off.</note>
+  </variable>
+  <variable>
+    <name>OLLAMA_BASE_URL / OLLAMA_VISION_MODEL / OLLAMA_TEXT_MODEL / OLLAMA_IMAGE_MODEL</name>
+    <description>Ollama connection + per-capability model tags (server-only). Defaults: http://localhost:11434 / qwen3-vl:8b / qwen3.5:9b / x/z-image-turbo.</description>
+    <required>false</required>
+    <note>Dev image generation requires `ollama pull x/z-image-turbo` (Ollama ≥0.32, experimental image generation, macOS first). x/flux2-klein is an alternative.</note>
   </variable>
   <variable>
     <name>HAIRSTYLE_RATE_LIMIT_PER_MIN</name>
@@ -136,22 +153,28 @@ CRITICAL (provider-swappable): all model access goes through a single `Hairstyle
 src/
 ├── app/
 │   ├── [locale]/tools/hairstyle-recommendation/
-│   │   └── page.tsx                    # SSG shell + long-form intro/FAQ + <HairstyleTool/> (client) + JSON-LD
+│   │   └── page.tsx                    # SSG shell (wide max-w-screen-xl): back+share row → ToolIntro → <HairstyleTool/> → how-to → FAQ + JSON-LD
 │   └── api/hairstyle/
 │       ├── analyze/route.ts            # POST: image → FaceAnalysis (ephemeral)
-│       └── recommend/route.ts          # POST: RecommendInput → Recommendation[]
+│       ├── recommend/route.ts          # POST: RecommendInput → Recommendation[]
+│       └── preview/route.ts            # POST: { hairstyleId, locale } → generated style-preview image (ephemeral; 503 when disabled)
 ├── components/tools/hairstyle-recommendation/
-│   ├── HairstyleTool.tsx               # "use client" root; owns flow state machine
+│   ├── HairstyleTool.tsx               # "use client" root; useReducer(flowReducer); 2-col workspace (MAIN + sticky RAIL)
 │   ├── EntryChooser.tsx                # photo path vs no-photo path
-│   ├── PhotoDropzone.tsx               # picker + drag-drop + camera; client resize; privacy notice
+│   ├── PhotoDropzone.tsx               # picker + drag-drop + camera; client resize; privacy notice; emits objectUrl
+│   ├── MyPhotoPanel.tsx                # persistent "My photo" rail card: preview + replace/remove + ephemeral note
 │   ├── FaceShapePicker.tsx             # labeled face-shape illustrations (no-photo path)
 │   ├── AttributeSelectors.tsx          # preference / length / type / occasion pills
 │   ├── AnalysisCard.tsx                # face shape + confidence meter + features
 │   ├── RecommendationGrid.tsx          # 3–6 RecommendationCard
-│   ├── RecommendationCard.tsx          # name + reason + tips + reference image
+│   ├── RecommendationCard.tsx          # name + reason + tips + PreviewImage
+│   ├── PreviewImage.tsx                # 4:5 box: curated image → shimmer (aria-busy) → generated preview fade-in / quiet fallback
 │   └── ResultActions.tsx               # regenerate / copy-summary / share / reset
+├── lib/ai/                             # PLATFORM capability layer (platform SPEC): StructuredModel/ImageGenerator ports, GeminiClient, OllamaClient, guardrails, env, factory
 ├── lib/hairstyle-recommendation/
-│   ├── schema.ts                       # zod: AnalyzeRequest, RecommendRequest, FaceAnalysis, Recommendation, ApiEnvelope
+│   ├── flow.ts                         # pure reducer: stage machine + photo persistence + preview queue (no react/SDK imports)
+│   ├── flow.test.ts
+│   ├── schema.ts                       # zod: AnalyzeRequest, RecommendRequest, PreviewRequest, FaceAnalysis, Recommendation, ApiEnvelope
 │   ├── constants.ts                    # enums, MAX_IMAGE_BYTES, MAX_EDGE_PX, JPEG_QUALITY, rate limits
 │   ├── catalog.ts                      # curated HairstyleLibraryEntry[] + match(faceShape, attrs) → candidate IDs
 │   ├── catalog.test.ts
@@ -161,8 +184,9 @@ src/
 │   ├── rate-limit.ts                   # per-IP token bucket (KV or in-memory)
 │   ├── ai/
 │   │   ├── types.ts                    # HairstyleAI interface + provider-facing types
-│   │   ├── gemini.ts                   # GeminiProvider (uses @google/genai, GEMINI_API_KEY)
-│   │   ├── index.ts                    # getProvider() factory (AI_PROVIDER)
+│   │   ├── gemini.ts                   # GeminiProvider — thin adapter over platform GeminiClient
+│   │   ├── ollama.ts                   # OllamaHairstyleProvider — thin adapter over platform OllamaClient
+│   │   ├── index.ts                    # getProvider() factory (AI_PROVIDER: gemini | ollama)
 │   │   └── gemini.test.ts              # provider mapping/guardrail tests (mocked SDK)
 │   └── index.ts                        # barrel
 ├── i18n/messages/{ko,en}.json          # tools.hairstyle-recommendation.* namespace
@@ -207,16 +231,25 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
   </HairstyleLibraryEntry>
   <ApiEnvelope>
     - ok: boolean
-    - data: FaceAnalysis | { recommendations: Recommendation[] } | null
+    - data: FaceAnalysis | { recommendations: Recommendation[] } | { image: string, mimeType: string } | null
     - error: object { code: enum (see error codes), message: string } | null
   </ApiEnvelope>
+  <PreviewRequest>
+    - hairstyleId: string — must exist in the catalog (server-verified; unknown id → 400 VALIDATION_ERROR)
+    - locale: enum (ko, en)
+  </PreviewRequest>
+  <PreviewResponse>
+    - image: string (data URL, e.g. data:image/png;base64,...) — generated style preview, ephemeral (never stored server-side)
+    - mimeType: string (image/png | image/webp | image/jpeg)
+  </PreviewResponse>
   <constants>
     - FACE_SHAPES = [oval, round, square, heart, oblong, diamond, triangle]
     - PREFERENCES = [feminine, masculine, neutral]; LENGTHS = [short, medium, long]
     - HAIR_TYPES = [straight, wavy, curly, coily]; OCCASIONS = [daily, business, event, seasonal]
     - MAX_IMAGE_BYTES = 5 * 1024 * 1024 (5 MB); MAX_EDGE_PX = 1024; JPEG_QUALITY = 0.85
     - MIN_RECS = 3; MAX_RECS = 6
-    - RATE_LIMIT_ANALYZE_PER_MIN = 10; RATE_LIMIT_RECOMMEND_PER_MIN = 20
+    - RATE_LIMIT_ANALYZE_PER_MIN = 10; RATE_LIMIT_RECOMMEND_PER_MIN = 20; PREVIEW_RATE_LIMIT_PER_MIN = 30
+    - PREVIEW_IMAGE_SIZE = 768 (square generation; displayed in 4:5 object-cover boxes); PREVIEW_CONCURRENCY = 2 (client-side parallel preview requests)
     - ALLOWED_IMAGE_TYPES = [image/png, image/jpeg, image/webp]
   </constants>
 </core_data_entities>
@@ -258,6 +291,26 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     </flow>
     <errors>400 VALIDATION_ERROR, 429 RATE_LIMITED, 502 AI_UNAVAILABLE, 500 INTERNAL</errors>
   </endpoint>
+  <endpoint name="preview">
+    <method>POST</method>
+    <path>/api/hairstyle/preview</path>
+    <runtime>Cloudflare Worker (OpenNext) — Node-compatible route handler</runtime>
+    <request>
+      Content-Type: application/json
+      Body (zod PreviewRequest): { hairstyleId: string, locale: enum (ko, en) }
+    </request>
+    <response>200 ApiEnvelope { ok: true, data: { image: string (data URL), mimeType: string }, error: null }</response>
+    <flow>
+      1. Rate-limit check (IP, PREVIEW_RATE_LIMIT_PER_MIN=30) → 429 RATE_LIMITED.
+      2. zod validate; verify hairstyleId exists in the catalog → 400 VALIDATION_ERROR otherwise.
+      3. getImageGenerator() — null (IMAGE_PROVIDER unset/none) → 503 IMAGE_GEN_DISABLED. Client treats this as a quiet, permanent fallback: drains its preview queue, keeps curated imagery, shows NO error surface.
+      4. buildStylePreviewPrompt(catalogEntry) — English factual description from catalog data ONLY (style name/tags/length/hairType; photorealistic salon portrait; no text/watermark). User free-text NEVER reaches the image model (prompt-injection safe).
+      5. generateImage({ prompt, width: 768, height: 768 }) with a 180s timeout ceiling (local Ollama can take 1–3 min at 768px incl. model load; hosted providers return far sooner) → 502 AI_UNAVAILABLE on failure/timeout.
+      6. Return envelope with data-URL image. Image bytes are never written to disk/KV/logs (ephemeral).
+    </flow>
+    <errors>400 VALIDATION_ERROR, 429 RATE_LIMITED, 502 AI_UNAVAILABLE, 503 IMAGE_GEN_DISABLED, 500 INTERNAL</errors>
+    <client_behavior>Auto-generation: when recommendations render, the client enqueues ALL cards and requests previews with concurrency PREVIEW_CONCURRENCY (2). Cards show the curated image instantly; a shimmer overlay (aria-busy) indicates generation; the generated image fades in with an "AI generated" chip. Failure → curated image stays with an "example image" chip. Disabled (503) → whole queue drains silently. Reduced-motion: no shimmer/fade, instant swap.</client_behavior>
+  </endpoint>
   <envelope_rule>All endpoints return the ApiEnvelope shape (200 with ok:false is NOT used — errors use their HTTP status AND an ok:false body with a typed code).</envelope_rule>
 </api_endpoints>
 
@@ -292,7 +345,9 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
 
 <pages_and_interfaces>
   <tool_page_layout>
-    Container max-width 960px, centered, horizontal padding 20px (mobile) / 24px (≥768px). Vertical rhythm: 24px between major blocks, 16px within a block. Page ground surface-soft (#fbfbf9); card surfaces canvas white (#ffffff), radius 16px (md) / 32px (lg), flat (no shadow except modal scrim). No tool-specific accent; all actions and highlights use brand red (#e60023).
+    **Wide shell (2026-07-18, aligned with apps.jurepi.kr tool pages):** container max-w-screen-xl (1280px), centered, horizontal padding 16px (mobile) / 24px (≥768px). Page composition order: (1) back link + horizontal ShareButtons row, (2) ToolIntro — ToolCharacter avatar (w-16 sm:w-[72px], rounded-2xl, shadow-card) + rose category eyebrow ("뷰티 도구" / "Beauty tools"; text-xs bold uppercase tracking-widest) + display H1 (font-display) + description (max-w-2xl), (3) the interactive workspace IMMEDIATELY after, (4) how-to steps + sm:grid-cols-3 tip cards (border-t separated), (5) FAQ (details/summary), (6) footer note. How-to/FAQ stay SSR-prerendered (SEO/GEO).
+    **Workspace:** grid grid-cols-1 lg:grid-cols-3 gap-6. MAIN (lg:col-span-2): stage flow — entry tiles → PhotoDropzone / FaceShapePicker → RecommendationGrid + ResultActions. RAIL (lg:col-span-1, lg:sticky lg:top-20 self-start): MyPhotoPanel (always visible once a photo exists; replace/remove; ephemeral note) + AnalysisCard + AttributeSelectors + primary CTA. Mobile: single column; once a photo is selected, a compact sticky photo chip (thumbnail + face-shape badge) pins to the top of the workspace. Errors render as inline banners with retry (not full-stage replacement).
+    Page ground surface-soft (#fbfbf9); card surfaces canvas white (#ffffff), radius 16px (md) / 32px (lg). Primary actions brand red (#e60023); rose category accent for eyebrow/identity touches per DESIGN.md.
   </tool_page_layout>
 
   <entry_chooser>
@@ -330,7 +385,7 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
   </recommendation_grid>
 
   <recommendation_card>
-    White card, radius 16px, overflow hidden, flat (no shadow by default). Top: reference image, aspect-ratio 4:5, object-fit cover, explicit width/height to prevent CLS, loading="lazy", credit as tiny caption bottom-right (10px, on-image scrim). Body (16px padding): hairstyle name (Pretendard 17px/700), reason (14px/1.55, text-charcoal #262622), then a "Styling tips" label (12px, text-mute #62625b, 600) + 2–3 bullet tips (13px). Footer: tag chips (11px). Hover: lift translateY(-2px) + subtle background/border shift, 150ms. Focus-visible: brand red border if it links out.
+    White card, radius 16px, overflow hidden, flat (no shadow by default). Top: PreviewImage — fixed aspect-ratio 4:5 box (explicit dimensions, zero CLS) showing the curated reference image instantly (object-fit cover, loading="lazy", credit caption bottom-right on-image scrim); while a style preview is generating, a shimmer overlay + aria-busy; on success the AI-generated preview fades in with a small "AI generated" chip; on failure/disabled the curated image stays with a quiet "example image" chip. Body (16px padding): hairstyle name (Pretendard 17px/700), reason (14px/1.55, text-charcoal #262622), then a "Styling tips" label (12px, text-mute #62625b, 600) + 2–3 bullet tips (13px). Footer: tag chips (11px). Hover: lift translateY(-2px) + subtle background/border shift, 150ms. Focus-visible: brand red border if it links out.
   </recommendation_card>
 
   <result_actions>
@@ -392,7 +447,8 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     - 415 INVALID_IMAGE → "Unsupported image. Use PNG, JPG, or WebP."
     - 422 NO_FACE_DETECTED → domain notice (above).
     - 429 RATE_LIMITED → warning toast "You're going a bit fast — please wait a moment." Disable trigger for the cooldown window (from Retry-After).
-    - 502 AI_UNAVAILABLE → "Our style advisor is briefly unavailable. Please try again." + Retry button.
+    - 502 AI_UNAVAILABLE → "Our style advisor is briefly unavailable. Please try again." + Retry button. (/preview only: quiet per-card fallback to the curated image — no toast.)
+    - 503 IMAGE_GEN_DISABLED (/preview only) → silent: client drains the preview queue and keeps curated imagery. No error surface.
     - 500 INTERNAL → generic error toast; log server-side (no image data).
   </api_error_mapping>
   <error_boundary>Platform Error Boundary wraps the tool module; fallback UI = "Something went wrong" + reset button. Dev logs to console; prod logs exclude any request image.</error_boundary>
@@ -409,7 +465,13 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     <guardrails>Structured JSON output enforced; temperature modest (~0.6) for recommend, low for analyze; server rejects any hairstyleId outside candidates; caps on string lengths; no PII retained.</guardrails>
     <cost>Free-tier friendly; analyze = 1 image call, recommend = 1 text call per action. No image generation (no image-gen cost).</cost>
   </integration>
-  <swap_note>To add a provider: implement HairstyleAI in a new file under ai/, register it in ai/index.ts, set AI_PROVIDER. No route/UI changes.</swap_note>
+  <integration name="Ollama (dev / open-source provider via platform OllamaClient)">
+    <purpose>Zero-cost local inference during development: vision analysis (qwen3-vl:8b), text recommendations (qwen3.5:9b), style-preview image generation (x/z-image-turbo or x/flux2-klein)</purpose>
+    <sdk>None — plain fetch to {OLLAMA_BASE_URL} (default http://localhost:11434): POST /api/chat (format: JSON schema, images[] base64, stream:false) + POST /v1/images/generations (OpenAI-compatible; Ollama ≥0.32 experimental image generation)</sdk>
+    <guardrails>Same shared guardrails as Gemini (zod validation + fence stripping + 1 retry); structured outputs enforced via chat `format`; failures map to AI_UNAVAILABLE.</guardrails>
+    <selection>AI_PROVIDER=ollama and/or IMAGE_PROVIDER=ollama (independent selections). Production keeps AI_PROVIDER=gemini and IMAGE_PROVIDER unset until a production image provider is chosen (deferred).</selection>
+  </integration>
+  <swap_note>To add a provider: implement HairstyleAI in a new file under ai/, register it in ai/index.ts, set AI_PROVIDER. Image generation providers implement the platform ImageGenerator port and register in src/lib/ai/factory.ts (IMAGE_PROVIDER). No route/UI changes.</swap_note>
 </third_party_integrations>
 
 <aesthetic_guidelines>
@@ -528,6 +590,18 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
       4. Verify friendly error + Retry button; server logs contain NO image data.
     </steps>
   </test_scenario_5>
+  <test_scenario_6>
+    <description>Style-preview auto-generation (progressive, fallback, disabled) + persistent photo</description>
+    <steps>
+      1. With IMAGE_PROVIDER=ollama (or a mocked /api/hairstyle/preview), complete either path to results.
+      2. Verify every card renders the curated image instantly (zero CLS) and preview requests fire with concurrency 2.
+      3. Verify shimmer + aria-busy during generation; the generated image fades in with the "AI generated" chip.
+      4. Force one preview request to fail → that card quietly keeps the curated image with the "example image" chip; no toast.
+      5. With IMAGE_PROVIDER unset → the first preview returns 503 IMAGE_GEN_DISABLED; the client drains the queue; zero further preview requests; no error surface.
+      6. Verify the uploaded photo remains visible in MyPhotoPanel from upload through results; Reset clears it (object URL revoked).
+      7. Verify no preview or upload image bytes are persisted or logged server-side.
+    </steps>
+  </test_scenario_6>
 </final_integration_test>
 
 <success_criteria>
@@ -535,6 +609,8 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     - Both entry paths work; recommend succeeds with and without a prior analyze.
     - Every returned hairstyleId exists in the catalog; ≥ 3 recommendations guaranteed (backfill).
     - No-face / low-confidence / rate-limit / provider-outage all handled without dead ends.
+    - Style previews auto-generate per card when IMAGE_PROVIDER is set; failure/disabled degrade quietly to curated imagery and never block recommendations.
+    - The uploaded photo stays visible in MyPhotoPanel through the entire flow (upload → results); Reset revokes the object URL.
   </functionality>
   <user_experience>
     - Time-to-first-recommendation ≈ ≤ 4s on a typical connection (single analyze + single recommend call).
@@ -549,7 +625,7 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     - No image is ever stored or logged (verified). Key is server-only (verified absent from client bundle). Rate limiting active. Same-origin enforced.
   </security_privacy>
   <visual_design>
-    - Matches ai.jurepi.kr DESIGN tokens; single brand red accent for all actions and emphasis; no tool-specific accents. Light theme polished (dark = Phase 2).
+    - Matches ai.jurepi.kr DESIGN tokens; brand red primary + rose category accent (eyebrow/identity); wide 1280px tool shell with ToolIntro header + share row. Light theme polished (dark = Phase 2).
   </visual_design>
   <build>
     - `next build` + OpenNext build succeed; deploys to Cloudflare Workers; env + optional KV bound; tool page is indexable (JSON-LD valid).
@@ -579,7 +655,7 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     7. Rate limiting + headers, SEO/JSON-LD verification, Lighthouse/CWV.
   </recommended_implementation_order>
   <testing_strategy>Unit-test the pure lib (catalog match, resize math, prompt shape, provider output→Recommendation mapping with a mocked SDK). Integration-test the two routes (validation, error codes, backfill, no-persistence). E2E the 5 scenarios above with Playwright; screenshot 320/768/1024/1440. Mock the provider in tests — never call the live API in CI.</testing_strategy>
-  <phase_2_seam>For generative try-on: add `generateTryOn(image, hairstyleId): Promise<{ image: string }>` to HairstyleAI, an opt-in "Try it on me" action + result-image slot on RecommendationCard, and an image-gen provider. No change to analyze/recommend contracts.</phase_2_seam>
+  <phase_2_seam>For generative try-on: pass the user photo as `ImageGenerator.referenceImage` (seam already in the platform port) behind an `IMAGE_TRYON_ENABLED` flag, with an opt-in "Try it on me" action per card. Requires an edit-capable provider (Workers AI flux-2-klein supports editing; Ollama img2img pending an upstream source-image regression fix). No change to analyze/recommend contracts.</phase_2_seam>
 </key_implementation_notes>
 
 </project_specification>

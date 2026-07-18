@@ -59,3 +59,10 @@ export const ALLOWED_IMAGE_TYPES = [
 ] as const;
 
 export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
+
+// Preview generation limits per SPEC (2026-07-18)
+export const PREVIEW_RATE_LIMIT_PER_MIN = 30; // Per-IP rate limit for /api/hairstyle/preview
+export const PREVIEW_IMAGE_WIDTH = 768; // Fixed width for style preview
+export const PREVIEW_IMAGE_HEIGHT = 960; // Fixed height (4:5 aspect ratio)
+export const PREVIEW_CONCURRENCY = 2; // Max concurrent preview generations (client-side)
+export const PREVIEW_TIMEOUT_MS = 45000; // 45s timeout per image generation

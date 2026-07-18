@@ -11,6 +11,7 @@ import {
   RecommendationSchema,
   ProviderRecommendationSchema,
   AnalyzeRequestSchema,
+  PreviewRequestSchema,
   parseAnalyzeRequest,
   parseRecommendRequest,
   validateProviderRecommendations,
@@ -338,5 +339,110 @@ describe('validateProviderRecommendations', () => {
         },
       ])
     ).toThrow();
+  });
+});
+
+describe('PreviewRequestSchema', () => {
+  it('accepts valid preview request with ko locale', () => {
+    const valid = {
+      hairstyleId: 'soft-bob',
+      locale: 'ko',
+    };
+    expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('accepts valid preview request with en locale', () => {
+    const valid = {
+      hairstyleId: 'wavy-lob',
+      locale: 'en',
+    };
+    expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('rejects missing hairstyleId', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        locale: 'ko',
+      })
+    ).toThrow();
+  });
+
+  it('rejects empty string hairstyleId', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        hairstyleId: '',
+        locale: 'en',
+      })
+    ).toThrow();
+  });
+
+  it('rejects hairstyleId exceeding 100 characters', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        hairstyleId: 'x'.repeat(101),
+        locale: 'ko',
+      })
+    ).toThrow();
+  });
+
+  it('accepts hairstyleId at max length (100 chars)', () => {
+    const valid = {
+      hairstyleId: 'x'.repeat(100),
+      locale: 'en',
+    };
+    expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('rejects invalid locale', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        hairstyleId: 'bob',
+        locale: 'fr',
+      })
+    ).toThrow();
+  });
+
+  it('rejects missing locale', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        hairstyleId: 'bob',
+      })
+    ).toThrow();
+  });
+
+  it('rejects request with unknown additional fields (strict)', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        hairstyleId: 'bob',
+        locale: 'ko',
+        unknownField: 'value',
+      })
+    ).toThrow();
+  });
+
+  it('rejects request with extra fields like referenceImage', () => {
+    expect(() =>
+      PreviewRequestSchema.parse({
+        hairstyleId: 'bob',
+        locale: 'en',
+        referenceImage: { data: 'base64', mimeType: 'image/png' },
+      })
+    ).toThrow();
+  });
+
+  it('accepts hairstyleId with kebab-case naming', () => {
+    const valid = {
+      hairstyleId: 'soft-layered-bob',
+      locale: 'ko',
+    };
+    expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('accepts hairstyleId with underscores', () => {
+    const valid = {
+      hairstyleId: 'short_bob_style',
+      locale: 'en',
+    };
+    expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
   });
 });

@@ -8,7 +8,12 @@ import { resizeImage } from '@/lib/hairstyle-recommendation/resize';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from '@/lib/hairstyle-recommendation';
 
 interface PhotoDropzoneProps {
-  onFileSelected: (file: File, dataUrl: string, mimeType: string) => void;
+  onFileSelected: (
+    file: File,
+    dataUrl: string,
+    mimeType: 'image/png' | 'image/jpeg' | 'image/webp',
+    objectUrl: string
+  ) => void;
 }
 
 export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
@@ -47,9 +52,15 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
 
       try {
         const result = await resizeImage(file);
+        const objectUrl = URL.createObjectURL(file);
         setFileName(file.name);
         setPreview(result.dataUrl);
-        onFileSelected(file, result.dataUrl, result.mimeType);
+        onFileSelected(
+          file,
+          result.dataUrl,
+          result.mimeType as 'image/png' | 'image/jpeg' | 'image/webp',
+          objectUrl
+        );
       } catch (err) {
         const msg = err instanceof Error ? err.message : t('error.generic');
         setError(msg);

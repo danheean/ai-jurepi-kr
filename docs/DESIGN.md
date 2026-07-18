@@ -433,6 +433,7 @@ Display roles (display-xl, display-lg, heading-xl) use Gmarket Sans 700 for a ro
 
 ### Grid & Container
 - **Max width:** ~1280px content area at desktop with 24px gutters (~48px at ultrawide).
+- **Tool detail pages (standard, 2026-07-18):** `max-w-screen-xl` (1280px) wide container — aligned with apps.jurepi.kr tool pages. The tool workspace (interactive module) sits immediately after the ToolIntro header (character avatar + category eyebrow + display title + description) and uses a `grid-cols-1 lg:grid-cols-3` split where a tool needs a persistent side rail. The old narrow `max-w-3xl` prose column is retired for tool pages.
 - **Tool card grid:** auto-fitting column-based layout — 5–6 columns at ultrawide, 4 columns at desktop, 3 at tablet, 2 at mobile-landscape, 1 at mobile. Gutters are `{spacing.sm}` (8px) horizontal and vertical.
 - **Home feature row:** asymmetric 2-column split where text and imagery alternate left/right down the page.
 - **Footer:** 4-column link grid at desktop, collapsing to 2-up at tablet, 1-up at mobile.
