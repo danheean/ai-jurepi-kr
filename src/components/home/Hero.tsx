@@ -12,7 +12,9 @@ import { ToolCharacter } from '@/components/tools/ToolCharacter';
  * single glyph. `break-keep` (word-break: keep-all) also wraps Korean at word
  * boundaries rather than mid-word.
  *
- * Decorative blobs positioned absolutely behind content for atmosphere.
+ * Decorative accent blobs sit absolutely behind the content (static, low
+ * opacity, pointer-events none) for atmosphere. Opacity lives in the inline
+ * style alongside size/color — Tailwind's opacity scale has no 7/8 step.
  */
 export function Hero() {
   const t = useTranslations('home');
@@ -20,38 +22,41 @@ export function Hero() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative overflow-hidden bg-surface-soft px-lg py-section"
+      className="relative overflow-hidden bg-surface-soft px-lg pt-section pb-lg"
     >
-      {/* Decorative blobs (behind content) */}
+      {/* Decorative accent blobs (behind content) */}
       <div
-        className="pointer-events-none absolute -z-10 rounded-full blur-2xl opacity-10"
+        className="pointer-events-none absolute -z-10 rounded-full blur-2xl"
         style={{
           width: '400px',
           height: '400px',
           top: '10%',
           right: '5%',
+          opacity: 0.1,
           backgroundColor: 'var(--accent-coral)',
         }}
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -z-10 rounded-full blur-2xl opacity-8"
+        className="pointer-events-none absolute -z-10 rounded-full blur-2xl"
         style={{
           width: '300px',
           height: '300px',
           bottom: '15%',
           left: '0%',
+          opacity: 0.08,
           backgroundColor: 'var(--accent-mint)',
         }}
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -z-10 rounded-full blur-2xl opacity-7"
+        className="pointer-events-none absolute -z-10 rounded-full blur-2xl"
         style={{
           width: '350px',
           height: '350px',
           top: '30%',
           left: '10%',
+          opacity: 0.07,
           backgroundColor: 'var(--accent-grape)',
         }}
         aria-hidden="true"
@@ -71,13 +76,13 @@ export function Hero() {
           {/* Headline */}
           <h1
             id="hero-heading"
-            className="mb-lg break-keep font-display text-display-xl font-bold leading-tight text-ink"
+            className="mb-lg text-balance break-keep font-display text-display-xl font-bold text-ink"
           >
             {t('title')}
           </h1>
 
           {/* Subhead */}
-          <p className="mb-xl max-w-[34rem] break-keep text-body-md leading-relaxed text-body">
+          <p className="mb-xl max-w-[34rem] text-pretty break-keep text-body-md leading-relaxed text-body">
             {t('subtitle')}
           </p>
 

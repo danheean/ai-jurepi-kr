@@ -37,7 +37,7 @@ export function Header() {
         {/* Wordmark — matches apps.jurepi.kr (Gmarket Sans, text-xl) */}
         <Link
           href="/"
-          className="font-display text-xl font-bold text-ink hover:text-primary transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="whitespace-nowrap font-display text-xl font-bold text-ink hover:text-primary transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label="Jurepi AI Home"
         >
           Jurepi AI
@@ -45,12 +45,14 @@ export function Header() {
 
         {/* Right cluster: sibling link + search + locale + theme */}
         <div className="flex items-center gap-sm">
-          {/* Cross-link to the sibling free-tools hub */}
+          {/* Cross-link to the sibling free-tools hub. Hidden on the smallest
+              screens (the header would otherwise wrap); mobile users reach it
+              from the footer instead. */}
           <a
             href={`${APPS_URL}/${locale}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-xxs px-xs py-xs text-body-sm font-medium text-mute hover:text-ink transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="hidden sm:inline-flex items-center gap-xxs px-xs py-xs whitespace-nowrap text-body-sm font-medium text-mute hover:text-ink transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {t('freeTools')}
             <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />

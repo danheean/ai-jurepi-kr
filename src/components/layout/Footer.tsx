@@ -31,6 +31,16 @@ export function Footer() {
                   {t('nav.home')}
                 </Link>
               </li>
+              <li>
+                <a
+                  href={`${APPS_URL}/${locale}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
+                >
+                  {t('nav.freeTools')}
+                </a>
+              </li>
             </ul>
           </div>
 
