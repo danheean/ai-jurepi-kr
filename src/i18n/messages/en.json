@@ -3,7 +3,8 @@
     "siteName": "ai.jurepi.kr",
     "siteDescription": "Free AI Tools Hub",
     "notFound": "Page not found",
-    "goHome": "Go back home"
+    "goHome": "Go back home",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "home": "Home",
@@ -11,7 +12,9 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "contact": "Contact",
-    "freeTools": "Free tools"
+    "freeTools": "Free tools",
+    "mainNav": "Main navigation",
+    "footerNav": "Footer navigation"
   },
   "home": {
     "meta": {
@@ -26,6 +29,8 @@
     "requestSubject": "ai.jurepi.kr - Tool Request",
     "mascotPlaceholder": "Mascot",
     "searchPlaceholder": "Search tools...",
+    "searchAria": "Search tools",
+    "toolsHeading": "AI tools",
     "noResults": "No results found",
     "resetSearch": "Reset search",
     "comingSoon": "Coming soon",

@@ -16,6 +16,7 @@ interface ToolExplorerProps {
 }
 
 function ToolExplorerContent({ initialTools, categories }: ToolExplorerProps) {
+  const t = useTranslations('home');
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get('q') || ''
@@ -61,6 +62,7 @@ function ToolExplorerContent({ initialTools, categories }: ToolExplorerProps) {
 
   return (
     <>
+      <h2 className="sr-only">{t('toolsHeading')}</h2>
       <SearchBar onSearch={handleSearch} initialQuery={searchQuery} />
       <div className="flex gap-lg flex-col">
         {categories.length > 0 && (

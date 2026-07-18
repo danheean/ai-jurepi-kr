@@ -16,14 +16,17 @@ export function Footer() {
     <footer className="bg-canvas border-t border-hairline mt-section">
       <div className="max-w-screen-2xl mx-auto px-lg py-xxl">
         {/* Link Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-xl mb-xl">
+        <nav
+          aria-label={t('nav.footerNav')}
+          className="grid grid-cols-2 md:grid-cols-4 gap-xl mb-xl"
+        >
           <div>
-            <h3 className="text-body-sm-strong text-ink mb-md">Tools</h3>
+            <h2 className="text-body-sm-strong text-ink mb-md">Tools</h2>
             <ul className="space-y-sm">
               <li>
                 <Link
                   href="/"
-                  className="text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.home')}
                 </Link>
@@ -32,14 +35,14 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-body-sm-strong text-ink mb-md">Company</h3>
+            <h2 className="text-body-sm-strong text-ink mb-md">Company</h2>
             <ul className="space-y-sm">
               <li>
                 <a
                   href={`${APPS_URL}/${locale}/about`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.about')}
                 </a>
@@ -49,7 +52,7 @@ export function Footer() {
                   href={`${APPS_URL}/${locale}/contact`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.contact')}
                 </a>
@@ -58,12 +61,12 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-body-sm-strong text-ink mb-md">Legal</h3>
+            <h2 className="text-body-sm-strong text-ink mb-md">Legal</h2>
             <ul className="space-y-sm">
               <li>
                 <Link
                   href="/privacy"
-                  className="text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.privacy')}
                 </Link>
@@ -71,7 +74,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/terms"
-                  className="text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.terms')}
                 </Link>
@@ -80,21 +83,21 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-body-sm-strong text-ink mb-md">Social</h3>
+            <h2 className="text-body-sm-strong text-ink mb-md">Social</h2>
             <ul className="space-y-sm">
               <li>
                 <a
                   href="https://github.com/jurepi"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   GitHub
                 </a>
               </li>
             </ul>
           </div>
-        </div>
+        </nav>
 
         {/* Bottom Row */}
         <div className="border-t border-hairline pt-xl flex flex-col md:flex-row justify-between items-center gap-md">

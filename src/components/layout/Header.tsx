@@ -16,11 +16,24 @@ const APPS_URL = 'https://apps.jurepi.kr';
  */
 export function Header() {
   const t = useTranslations('nav');
+  const tHome = useTranslations('home');
   const locale = useLocale();
+
+  // The header search icon focuses the in-page tool search (SearchBar) rather
+  // than being a dead affordance — one search field, surfaced from the header.
+  const focusSearch = () => {
+    const el = document.getElementById('tool-search');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el as HTMLInputElement).focus({ preventScroll: true });
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-canvas border-b border-hairline">
-      <div className="flex items-center justify-between px-lg py-md max-w-screen-2xl mx-auto h-16">
+      <nav
+        aria-label={t('mainNav')}
+        className="flex items-center justify-between px-lg py-md max-w-screen-2xl mx-auto h-16"
+      >
         {/* Wordmark — matches apps.jurepi.kr (Gmarket Sans, text-xl) */}
         <Link
           href="/"
@@ -31,23 +44,24 @@ export function Header() {
         </Link>
 
         {/* Right cluster: sibling link + search + locale + theme */}
-        <div className="flex items-center gap-md">
+        <div className="flex items-center gap-sm">
           {/* Cross-link to the sibling free-tools hub */}
           <a
             href={`${APPS_URL}/${locale}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-xxs text-body-sm font-medium text-mute hover:text-ink transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-xxs px-xs py-xs text-body-sm font-medium text-mute hover:text-ink transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             {t('freeTools')}
             <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
           </a>
 
-          {/* Search icon (placeholder for future search) */}
+          {/* Search — focuses the in-page tool search */}
           <button
             type="button"
-            aria-label="Search tools"
-            className="p-sm rounded-md text-ink hover:bg-surface-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={focusSearch}
+            aria-label={tHome('searchAria')}
+            className="w-11 h-11 flex items-center justify-center rounded-md text-ink hover:bg-surface-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Search className="w-5 h-5" />
           </button>
@@ -58,7 +72,7 @@ export function Header() {
           {/* Theme toggle */}
           <ThemeToggle />
         </div>
-      </div>
+      </nav>
     </header>
   );
 }

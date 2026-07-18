@@ -34,14 +34,16 @@ export function SearchBar({ onSearch, initialQuery = '' }: SearchBarProps) {
     <div className="px-lg py-xl bg-canvas">
       <div className="max-w-screen-2xl mx-auto">
         <div className="relative">
-          <Search className="absolute left-lg top-1/2 -translate-y-1/2 w-5 h-5 text-ash pointer-events-none" />
+          <Search className="absolute left-lg top-1/2 -translate-y-1/2 w-5 h-5 text-mute pointer-events-none" />
           <input
+            id="tool-search"
             type="search"
             placeholder={t('searchPlaceholder')}
+            aria-label={t('searchAria')}
             value={query}
             onChange={handleChange}
             data-testid="search-input"
-            className="w-full pl-12 pr-lg py-md rounded-full bg-surface-card border border-hairline text-body-md text-ink placeholder:text-ash transition-all duration-150 focus:bg-canvas focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="w-full pl-12 pr-lg py-md rounded-full bg-surface-card border border-hairline text-body-md text-ink placeholder:text-mute transition-all duration-150 focus:bg-canvas focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           />
         </div>
       </div>

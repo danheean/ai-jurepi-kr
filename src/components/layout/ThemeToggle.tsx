@@ -43,7 +43,7 @@ export function ThemeToggle() {
       type="button"
       onClick={handleToggle}
       aria-label={isDark ? 'Light mode' : 'Dark mode'}
-      className="p-sm rounded-md text-ink hover:bg-surface-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="w-11 h-11 flex items-center justify-center rounded-md text-ink hover:bg-surface-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       {isDark ? (
         <Sun className="w-5 h-5" />
