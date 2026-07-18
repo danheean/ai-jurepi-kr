@@ -50,6 +50,26 @@ const config: Config = {
         // Focus ring colors
         'focus-outer': 'var(--focus-outer)',
         'focus-inner': 'var(--focus-inner)',
+
+        // Category Accents (6-color system)
+        'accent-coral': 'var(--accent-coral)',
+        'accent-coral-soft': 'var(--accent-coral-soft)',
+        'accent-coral-ink': 'var(--accent-coral-ink)',
+        'accent-mint': 'var(--accent-mint)',
+        'accent-mint-soft': 'var(--accent-mint-soft)',
+        'accent-mint-ink': 'var(--accent-mint-ink)',
+        'accent-sky': 'var(--accent-sky)',
+        'accent-sky-soft': 'var(--accent-sky-soft)',
+        'accent-sky-ink': 'var(--accent-sky-ink)',
+        'accent-sun': 'var(--accent-sun)',
+        'accent-sun-soft': 'var(--accent-sun-soft)',
+        'accent-sun-ink': 'var(--accent-sun-ink)',
+        'accent-grape': 'var(--accent-grape)',
+        'accent-grape-soft': 'var(--accent-grape-soft)',
+        'accent-grape-ink': 'var(--accent-grape-ink)',
+        'accent-rose': 'var(--accent-rose)',
+        'accent-rose-soft': 'var(--accent-rose-soft)',
+        'accent-rose-ink': 'var(--accent-rose-ink)',
       },
       boxShadow: {
         card: 'var(--shadow-card)',
@@ -81,6 +101,17 @@ const config: Config = {
       fontFamily: {
         display: 'var(--font-display)',
         body: 'var(--font-body)',
+      },
+      keyframes: {
+        'heart-beat': {
+          '0%,100%': { transform: 'scale(1)' },
+          '25%': { transform: 'scale(1.25)' },
+          '50%': { transform: 'scale(0.95)' },
+          '75%': { transform: 'scale(1.15)' },
+        },
+      },
+      animation: {
+        'heart-beat': 'heart-beat 500ms var(--ease-out, ease-out)',
       },
       fontSize: {
         'display-xl': [

@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { allTools, getAllCategories } from '@/tools/registry';
 import { Hero } from '@/components/home/Hero';
 import { ToolExplorer } from '@/components/home/ToolExplorer';
+import { ShareButtons } from '@/components/share/ShareButtons';
 import { buildPageMetadata } from '@/lib/seo';
 
 type Props = {
@@ -36,6 +37,10 @@ export default async function HomePage({ params }: Props) {
   return (
     <>
       <Hero />
+      {/* Share buttons row */}
+      <div className="mx-auto max-w-screen-2xl px-lg py-section">
+        <ShareButtons orientation="horizontal" />
+      </div>
       <ToolExplorer initialTools={allToolsList} categories={categories} />
     </>
   );

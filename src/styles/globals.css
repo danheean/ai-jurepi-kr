@@ -4,6 +4,14 @@
    rounded-md, gap-lg, text-display-xl, …) are generated and the app renders unstyled. */
 @config '../../tailwind.config.ts';
 @import 'pretendard/dist/web/static/pretendard.css';
+
+@font-face {
+  font-family: 'Gmarket Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/GmarketSansBold.woff2') format('woff2');
+}
 @import './tokens.css';
 
 html {

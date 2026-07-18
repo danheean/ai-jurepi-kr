@@ -2,8 +2,8 @@
  * Tool Registry Type Definitions
  *
  * Driven by SPEC.md and DESIGN.md:
- * - Single brand-red accent per DESIGN.md (no per-category colors)
- * - Category exists for filtering/grouping only
+ * - Per-category accent color identity (coral/mint/sky/sun/grape/rose)
+ * - Category exists for filtering/grouping + accent signaling
  * - hasServer marks tools that require /api/** routes
  */
 
@@ -18,6 +18,8 @@ export type ToolCategory =
   | 'mindset'
   | 'news';
 
+export type AccentColor = 'coral' | 'mint' | 'sky' | 'sun' | 'grape' | 'rose';
+
 export type ToolStatus = 'live' | 'coming_soon';
 
 export interface ToolMeta {
@@ -27,8 +29,11 @@ export interface ToolMeta {
   /** URL slug (e.g., 'hairstyle-recommendation') */
   slug: string;
 
-  /** Category for filtering and grouping (no color identity) */
+  /** Category for filtering and grouping */
   category: ToolCategory;
+
+  /** Per-category accent color (coral/mint/sky/sun/grape/rose) — signals category identity on icon tiles, filters, badges */
+  accent: AccentColor;
 
   /** Lucide icon name */
   icon: string;

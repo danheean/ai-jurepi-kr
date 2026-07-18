@@ -27,7 +27,33 @@
     "searchPlaceholder": "Search tools...",
     "noResults": "No results found",
     "resetSearch": "Reset search",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "favorites": {
+      "filterLabel": "Favorites",
+      "filterAria": "Filter by favorites",
+      "addAria": "Add {name} to favorites",
+      "removeAria": "Remove {name} from favorites",
+      "emptyHeading": "No favorites yet",
+      "emptyBody": "Tap the heart on a card to add favorites.",
+      "showAll": "Show all tools"
+    }
+  },
+  "share": {
+    "heading": "Share",
+    "targets": {
+      "naver": "Share on Naver (Blog·Cafe)",
+      "x": "Share on X (Twitter)",
+      "facebook": "Share on Facebook",
+      "threads": "Share on Threads",
+      "telegram": "Share on Telegram",
+      "whatsapp": "Share on WhatsApp"
+    },
+    "copyLink": "Copy link",
+    "copied": "Link copied!",
+    "native": "Share via another app (Instagram, KakaoTalk, …)"
+  },
+  "toolPage": {
+    "characterAlt": "Jurepi character"
   },
   "footer": {
     "copyright": "© 2026 ai.jurepi.kr",

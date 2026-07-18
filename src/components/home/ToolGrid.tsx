@@ -2,18 +2,25 @@
 
 import { useTranslations } from 'next-intl';
 import { ToolCard } from './ToolCard';
-import { ToolMeta } from '@/tools/types';
+import { isInFavorites } from '@/lib/home-favorites/favorites';
+import type { ToolMeta } from '@/tools/types';
 
 interface ToolGridProps {
   tools: ToolMeta[];
   searchQuery?: string;
   activeCategory?: string | null;
+  favoriteIds?: string[];
+  favoritesOnly?: boolean;
+  onToggleFavorite?: (slug: string) => void;
 }
 
 export function ToolGrid({
   tools,
   searchQuery = '',
   activeCategory,
+  favoriteIds = [],
+  favoritesOnly = false,
+  onToggleFavorite,
 }: ToolGridProps) {
   const t = useTranslations();
 
@@ -26,7 +33,7 @@ export function ToolGrid({
     return t(`tools.${tool.slug}.description`) || '';
   };
 
-  // Filter tools based on search and category
+  // Filter tools based on search, category, and favorites
   const filteredTools = tools.filter((tool) => {
     const toolName = getToolName(tool);
     const toolDesc = getToolDescription(tool);
@@ -39,7 +46,11 @@ export function ToolGrid({
     const matchesCategory =
       !activeCategory || tool.category === activeCategory;
 
-    return matchesSearch && matchesCategory;
+    const matchesFavorites =
+      !favoritesOnly ||
+      (tool.status === 'live' && isInFavorites(favoriteIds, tool.slug));
+
+    return matchesSearch && matchesCategory && matchesFavorites;
   });
 
   // Sort: live first, then popular, then new, then coming_soon
@@ -74,6 +85,8 @@ export function ToolGrid({
               {...tool}
               displayName={getToolName(tool)}
               displayDescription={getToolDescription(tool)}
+              isFavorited={isInFavorites(favoriteIds, tool.slug)}
+              onToggleFavorite={onToggleFavorite}
             />
           ))}
         </div>

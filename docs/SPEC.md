@@ -6,7 +6,7 @@
 >
 > Visual design system (tokens, component styling): [`DESIGN.md`](DESIGN.md) is the single source of truth. This SPEC references design decisions by name but does NOT duplicate token values. See DESIGN.md for all color/spacing/typography tokens.
 >
-> **Visual Identity (Confirmed):** Single brand-red accent (#e60023) for all primary CTAs, active states, and brand emphasis. Pretendard single font family (weights 400/500/600/700) for both display and body. No per-category color accents; categories exist for filtering/grouping only. See DESIGN.md "Design Decisions > Confirmed" for definitive visual rules.
+> **Visual Identity (Confirmed 2026-07-18):** Brand red primary (#e60023) for all primary CTAs, active states, and brand emphasis. **6-category accent colors** (coral/mint/sky/sun/grape/rose) via per-tool `ToolMeta.accent` field. Dual typography: Gmarket Sans (700 weight) for display roles (hero H1, heading-xl, wordmark); Pretendard (400/600/700) for body/UI. Common platform features: **favorites** (localStorage, rose accent), **SNS share** (6 platforms + copy + native), **tool characters** (1:1 WebP/SVG, 300×300px). See DESIGN.md "Design Decisions > Confirmed 2026-07-18" for details.
 
 ```xml
 <project_specification>
@@ -16,6 +16,8 @@
 <overview>
 ai.jurepi.kr is a **server-backed AI tools hub**, the AI sibling of the static-export tools hub (apps.jurepi.kr). It hosts free, AI-powered online utilities — each a single-tool discovery page, each calling a backend AI model (Gemini, Claude, etc.) to analyze images, generate text, make recommendations, or transform data. The platform provides a shared shell, tool registry, SEO infrastructure, i18n routing, theming, consent/monetization, and — crucially — a provider-abstraction layer that lets AI implementations be **swapped without touching UI or route handlers**.
 
+The platform also provides **three mandatory common features** ported from apps.jurepi.kr: (1) **Favorites** — localStorage-backed heart toggles with rose accent and a favorites-only filter pill on home; (2) **SNS Sharing** — one-click sharing to 6 social platforms plus copy link + Web Share API (native mobile); (3) **Tool Characters** — per-tool 1:1 visual mascots (SVG/WebP, 300×300px intrinsic) appearing on home hero and tool detail pages.
+
 **CRITICAL: Server Runtime.** Unlike apps.jurepi.kr (static export, no backend), ai.jurepi.kr is a **Next.js 15 application deployed on Cloudflare Workers via OpenNext** (`@opennextjs/cloudflare`). This enables server `src/app/api/**` route handlers where AI keys live, inference runs, and responses are typed. The static SSG shell (home, tool pages) reuses the apps.jurepi.kr pattern; only the server surface is new.
 
 **CRITICAL: Provider Abstraction.** Each AI capability (e.g., "analyze face shape from a photo") is defined as a **domain port interface** (e.g., `HairstyleAI`). Implementations (adapters) are provider-specific (e.g., `GeminiProvider`). The active provider is selected by the `AI_PROVIDER` environment variable. Adding a new provider = implementing the interface in one file; route handlers and UI never change.
@@ -24,16 +26,16 @@ ai.jurepi.kr is a **server-backed AI tools hub**, the AI sibling of the static-e
 
 **CRITICAL: Typed API Contracts.** All endpoints return a consistent `ApiEnvelope { ok, data, error }` shape with typed error codes. Request validation via Zod on the server. Rate limiting is built into the platform layer, reusable by all tools.
 
-**CRITICAL: Tool Extensibility.** New tools are added by (1) a ToolMeta registry entry, (2) a service SPEC, (3) UI components, (4) optionally new API routes. Some tools are pure-client (no AI), some call AI endpoints. The platform supports both.
+**CRITICAL: Tool Extensibility.** New tools are added by (1) a ToolMeta registry entry (including `accent` field for category color), (2) a service SPEC, (3) UI components, (4) optionally new API routes. Some tools are pure-client (no AI), some call AI endpoints. The platform supports both.
 
 This SPEC is **platform and shell only**. Internals of any individual tool (flow logic, domain-specific validation, result rendering) are in that tool's own service SPEC.
 </overview>
 
 <scope_boundaries>
   <in_scope>
-    - Shared application shell: Header (wordmark, search trigger, locale switch, theme toggle), Footer, Breadcrumb, Toast system, ConsentBanner, AdSlot (height-reserved, consent-gated).
-    - Main dashboard screen: Hero, Search, Category Filter, responsive Tool Card grid (SSG).
-    - Typed tool registry (single source of truth): ToolMeta[] in src/tools/registry.ts, drives grid, sitemap, SEO, dynamic routes.
+    - Shared application shell: Header (wordmark in Gmarket Sans, search trigger, locale switch, theme toggle), Footer, Breadcrumb, Toast system, ConsentBanner, AdSlot (height-reserved, consent-gated).
+    - Main dashboard screen: Hero, Search, Category Filter, responsive Tool Card grid (SSG) with category accent icon tiles.
+    - Typed tool registry (single source of truth): ToolMeta[] in src/tools/registry.ts, drives grid, sitemap, SEO, dynamic routes, **includes new `accent` field**.
     - Dynamic tool route /[locale]/tools/[slug] with SSG (generateStaticParams per live tool × locale); mounts tool module per slug.
     - **Server runtime via OpenNext:** Cloudflare Workers deployment, Node-compatible route handlers in src/app/api/**, environment secrets (AI keys), rate limiting.
     - **AI Provider Abstraction Layer:** Platform-wide port interface pattern; factory-based provider selection via AI_PROVIDER env; example: HairstyleAI (port) → GeminiProvider (adapter).
@@ -46,6 +48,7 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
     - **Static Legal Pages:** About, Privacy, Terms, Contact (localized).
     - **Error Handling:** 404 (localized), Error Boundary around tool modules, toast notifications, input validation feedback.
     - **Accessibility:** WCAG 2.1 AA, keyboard nav, visible focus, prefers-reduced-motion, semantic HTML, correct lang + hreflang.
+    - **Common Features:** Favorites (localStorage, rose accent, filter toggle), SNS Share (6 platforms + copy + native), Tool Characters (1:1 WebP/SVG per tool).
   </in_scope>
 
   <out_of_scope>
@@ -76,11 +79,11 @@ This SPEC is **platform and shell only**. Internals of any individual tool (flow
       - i18n: next-intl v3.x — locales ["ko","en"], defaultLocale "ko", localePrefix "always".
       - State: React Context (theme, consent, toast); no global client store at platform level.
       - Icons: lucide-react v0.468 (stroke 1.75).
-      - Fonts: Pretendard (weights 400/500/600/700) self-hosted via next/font/local, subset, font-display: swap. Single family for display + body; hierarchy via size, weight, and tracking.
+      - Fonts: Gmarket Sans (weight 700 only, self-hosted) for display roles + Pretendard (weights 400/500/600/700, self-hosted) for body/UI. Subset, font-display: swap, preload Pretendard 400 only.
       - Validation (client + server): zod v4.
     </frontend>
     <persistence>
-      - localStorage only: theme, consent, per-tool ephemeral state (no cross-session persistence).
+      - localStorage only: theme, consent, **home-favorites** (versioned JSON schema), per-tool ephemeral state (no cross-session persistence).
       - NO database, NO first-party backend (except API routes for AI inference).
     </persistence>
   </inherited_from_apps_jurepi>
@@ -239,10 +242,10 @@ src/
 │   ├── manifest.ts
 │   ├── [locale]/
 │   │   ├── layout.tsx              # Providers, Header, Footer, ConsentBanner
-│   │   ├── page.tsx                # ★ MAIN DASHBOARD (Hero + ToolGrid)
+│   │   ├── page.tsx                # ★ MAIN DASHBOARD (Hero + ToolGrid + Favorites toggle)
 │   │   ├── not-found.tsx
 │   │   ├── tools/[slug]/
-│   │   │   ├── page.tsx            # SSG; mounts tool module + JSON-LD + breadcrumb
+│   │   │   ├── page.tsx            # SSG; mounts tool module + JSON-LD + breadcrumb + ShareButtons + ToolCharacter
 │   │   │   ├── layout.tsx          # Tool-level layout (if shared across tool variants)
 │   │   ├── about/page.tsx
 │   │   ├── privacy/page.tsx
@@ -255,14 +258,14 @@ src/
 │
 ├── components/
 │   ├── ui/                         # Button, Input, Toggle, Badge, Card, Modal, Toast, EmptyState, Skeleton
-│   ├── layout/                     # Header, Footer, LocaleSwitcher, ThemeToggle, ConsentBanner, Breadcrumb, ShareButtons
-│   ├── home/                       # Hero, SearchBar, CategoryFilter, ToolGrid, ToolCard
+│   ├── layout/                     # Header, Footer, LocaleSwitcher, ThemeToggle, ConsentBanner, Breadcrumb, ShareButtons, FavoriteButton
+│   ├── home/                       # Hero, SearchBar, CategoryFilter, ToolGrid, ToolCard, FavoritesFilterToggle, ShareButtons
 │   ├── ads/                        # AdSlot
 │   └── tools/                      # one folder per tool (see each tool's SPEC) — e.g. hairstyle-recommendation/
 │
 ├── tools/
-│   ├── registry.ts                 # ToolMeta[] — single source of truth
-│   └── types.ts                    # ToolCategory, ToolMeta, ToolStatus
+│   ├── registry.ts                 # ToolMeta[] — single source of truth (now includes `accent` field)
+│   └── types.ts                    # ToolCategory, ToolMeta, ToolStatus, AccentColor
 │
 ├── lib/
 │   ├── seo.ts                      # buildMetadata, websiteJsonLd
@@ -271,6 +274,8 @@ src/
 │   ├── api-envelope.ts             # Typed ApiEnvelope builder, error codes
 │   ├── rate-limit.ts               # Platform-wide rate limiter (per-IP, KV or in-memory)
 │   ├── utils.ts                    # cn(), search matcher, clamp, localization helpers
+│   ├── home-favorites.ts           # Favorites domain logic (pure functions): loadFavorites, saveFavorites, toggleFavorite, filterByFavorites
+│   ├── share.ts                    # Share targets: shareFacebook, shareX, shareNaver, shareThreads, shareTelegram, shareWhatsapp, copyLink, nativeShare
 │   │
 │   └── [tool-name]/
 │       ├── ai/
@@ -296,12 +301,17 @@ src/
 │   ├── useLocalStorage.ts
 │   ├── useConsent.ts
 │   ├── useToast.ts
+│   ├── useHomeFavorites.ts         # Loads/saves favorites from localStorage, auto-prunes missing tools
 │   └── [tool-specific hooks]
 │
 └── styles/
-    └── tokens.css                  # Design tokens (mirror of DESIGN.md)
+    └── tokens.css                  # Design tokens (mirror of DESIGN.md, includes accent colors)
 
 public/
+├── characters/                     # Tool character images (one per tool + home.webp)
+│   ├── home.webp                   # Home/hero character
+│   ├── hairstyle-recommendation.webp
+│   └── [other tool slugs].webp
 ├── hairstyles/                     # Curated reference images (future tools will have their own /public/[tool]/)
 │   ├── soft-layered-bob/
 │   │   ├── feminine.webp
@@ -322,7 +332,8 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     Compile-time registry entry (src/tools/types.ts, src/tools/registry.ts). Drives hub UI, sitemap, SEO, static params.
     - id: string (stable key, e.g. "hairstyle-recommendation")
     - slug: string (URL segment, e.g. "hairstyle-recommendation")
-    - category: enum (beauty, text, dev, random, converter, calculator, fun, mindset, news, etc. — extend as needed) — used for filtering/grouping only, no color identity
+    - category: enum (beauty, text, dev, random, converter, calculator, fun, mindset, news, etc. — extend as needed)
+    - accent: enum (coral, mint, sky, sun, grape, rose) — **NEW** — signals category color identity for icon tiles, badges, category pills. Drives tint of tool card icon background + accompanying chips.
     - icon: string (lucide icon name)
     - status: enum (live, coming_soon)
     - addedAt: string (ISO YYYY-MM-DD) — NEW badge derives from last 7 days
@@ -333,10 +344,48 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     - note: name/description resolved at render from messages[`tools.${id}.*`]
   </tool_meta>
 
+  <home_favorites>
+    localStorage only, versioned schema for forward-compat.
+    - Key: `ai-jurepi-home-favorites`
+    - Value: `{ version: 1, ids: string[] }`
+    - Methods (in src/lib/home-favorites.ts):
+      - `loadFavorites(): { version: 1, ids: string[] }` — loads from localStorage, auto-prunes invalid tool slugs
+      - `saveFavorites(ids: string[])` — persists to localStorage, validates against live tools
+      - `toggleFavorite(slug: string, isFavorite: boolean)` — adds/removes, returns new state
+      - `filterByFavorites(tools: ToolMeta[], favoriteIds: string[]): ToolMeta[]` — filters registry
+    - Hook: `useHomeFavorites(liveSlugs: string[])` in src/hooks/useHomeFavorites.ts — SSR-safe, returns { favorites, toggleFavorite, filterActive }
+  </home_favorites>
+
+  <sns_share>
+    Platform-wide share logic in src/lib/share.ts (pure functions, no side effects).
+    - Targets: facebook, x (formerly twitter), naver, threads, telegram, whatsapp, copy, native
+    - Functions:
+      - `shareFacebook(url: string, title: string)` — opens Facebook share dialog
+      - `shareX(url: string, text: string)` — opens X (Twitter) intent
+      - `shareNaver(url: string, title: string, description?: string)` — Naver share
+      - `shareThreads(url: string, text: string)` — Threads share
+      - `shareTelegram(url: string, title: string)` — Telegram share
+      - `shareWhatsapp(url: string, message: string)` — Whatsapp share
+      - `copyLink(url: string)` — copies to clipboard, shows toast
+      - `nativeShare(title: string, text: string, url: string)` — Web Share API (mounted-gated)
+    - Component: `ShareButtons` in src/components/layout/ShareButtons.tsx (mounted-gated, renders buttons for each target)
+    - Placement: Below hero on home page; near tool result on tool detail pages
+  </sns_share>
+
+  <tool_characters>
+    1:1 WebP/SVG images stored in public/characters/, mounted as decorative visuals.
+    - Naming: `public/characters/[slug].webp` (e.g., `hairstyle-recommendation.webp`) + `public/characters/home.webp`
+    - Intrinsic size: 300×300px (CSS scales responsively)
+    - Component: `ToolCharacter` in src/components/layout/ToolCharacter.tsx — renders <img src={`/characters/${slug}.webp`} alt="..." />
+    - Placement: Home hero (home.webp), tool detail pages (tool-specific), optional result cards
+    - Usage: Reuse existing jurepi mascot for now; phase in per-tool characters as designs mature
+  </tool_characters>
+
   <user_preferences>
     localStorage only (no server sync).
     - jurepi-theme: enum (light, dark, system) — default "light"
     - jurepi-consent: { ads: boolean; analytics: boolean; ts: number } | null
+    - ai-jurepi-home-favorites: { version: 1, ids: string[] } — see above
   </user_preferences>
 
   <api_envelope>
@@ -359,14 +408,14 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     - Tokens refill at configured rate (e.g., 10 per minute); checked on each request; 429 if exhausted.
   </rate_limit_state>
 
-  <note>Per-tool runtime state (e.g., hairstyle recommendation history) is defined in that tool's SPEC, not here. Platform only owns theme + consent.</note>
+  <note>Per-tool runtime state (e.g., hairstyle recommendation history) is defined in that tool's SPEC, not here. Platform owns theme + consent + favorites.</note>
 </core_data_entities>
 
 <route_definitions>
   <public_routes>
     <route path="/" redirect="/ko" status="307" />
-    <route path="/:locale" page="HomePage (main dashboard)" />
-    <route path="/:locale/tools/:slug" page="ToolPage (mounts tool module, SSG)" />
+    <route path="/:locale" page="HomePage (main dashboard with favorites toggle + share buttons)" />
+    <route path="/:locale/tools/:slug" page="ToolPage (mounts tool module, SSG, with tool character + share buttons)" />
     <route path="/:locale/about" page="AboutPage" />
     <route path="/:locale/privacy" page="PrivacyPage" />
     <route path="/:locale/terms" page="TermsPage" />
@@ -400,14 +449,17 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
         </header>
         <main>
           <home_page>                    <!-- ★ MAIN DASHBOARD -->
-            <hero> <eyebrow /> <h1 /> <subhead /> <search_bar /> </hero>
+            <hero> <eyebrow /> <h1 /> <subhead /> <search_bar /> <tool_character home/> </hero>
             <ad_slot variant="leaderboard" />
-            <category_filter />          <!-- pill row -->
+            <category_filter /> <favorites_filter_toggle />  <!-- pill row -->
             <tool_grid> <tool_card /> ... </tool_grid>
+            <share_buttons />            <!-- Below grid or in hero -->
           </home_page>
           <tool_page>                    <!-- mounts a tool module (statically rendered) -->
             <breadcrumb />
+            <tool_character tool-specific />
             <tool_module />               <!-- e.g. <HairstyleTool/> (see tool SPEC) -->
+            <share_buttons />
             <ad_slot variant="in_content" />
           </tool_page>
         </main>
@@ -419,7 +471,7 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   </app_root>
 
   <shared_primitives>
-    <button /> <text_input /> <toggle /> <badge /> <card /> <modal /> <toast /> <empty_state /> <skeleton /> <ad_slot />
+    <button /> <text_input /> <toggle /> <badge /> <card /> <modal /> <toast /> <empty_state /> <skeleton /> <ad_slot /> <favorite_button /> <share_buttons /> <tool_character />
   </shared_primitives>
 
   <provider_order>NextIntlClientProvider → ThemeProvider → ConsentProvider → ToastProvider</provider_order>
@@ -429,54 +481,81 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   <container>Max width 1120px centered (or per-tool override); horizontal padding 24px (≥768px) / 16px (mobile). Vertical rhythm: 48–64px between sections, 16–20px within.</container>
 
   <home_page>
-    - Hero: centered, padding 64px/40px (desktop) / 40px/24px (mobile). Eyebrow + H1 (Pretendard, clamp 32–56px) + subhead + SearchBar (56px tall, rounded, leading icon, placeholder "Search tools…").
+    - Hero: centered, padding 64px/40px (desktop) / 40px/24px (mobile). Eyebrow + H1 (Gmarket Sans 700, clamp 32–56px) + subhead + SearchBar (56px tall, rounded, leading icon, placeholder "Search tools…") + optional ToolCharacter (home.webp, 1:1, responsive width).
     - SearchBar: filters grid client-side by name/description/keywords (debounced 120ms); mirrored to URL query (?search=...).
-    - CategoryFilter: horizontal pill row (scroll-snap mobile). Pills derived from categories in registry. Active: brand bg + white text; inactive: muted; hover lifts.
-    - ToolGrid: 1-col <480px, 2-col 480–767, 3-col 768–1023, 4-col ≥1024; gap 20px. Sort: isPopular first → order asc → coming_soon last. Empty state (no match): illustration + "No results" + reset button.
-    - ToolCard: surface card (20px padding, 20px radius, soft shadow). Icon tile (48px, neutral background + glyph). Title (17px/700) + description (14px/500, 2-line clamp). Badges: NEW, Popular, coming-soon; all styling per DESIGN.md. Hover (live): translate-y -4px, shadow-hover, brand-soft border, 200ms ease-out; press scale 0.99. Focus-visible: 2px brand ring. coming_soon: opacity 0.7, no hover, cursor default. Entire card is Link target (live) or button (coming-soon for future interest capture).
+    - CategoryFilter + FavoritesFilterToggle: horizontal pill row (scroll-snap mobile). Pills derived from categories in registry + favorites. Category pills show category accent on text; Favorites pill (rose accent) toggles favorite-only view.
+    - ToolGrid: 1-col <480px, 2-col 480–767, 3-col 768–1023, 4-col ≥1024; gap 20px. Sort: isPopular first → order asc → coming_soon last. If favorites filter active, show only favorite tools. Empty state (no match): illustration + "No results" + reset button.
+    - ToolCard: surface card (16px radius, no padding, category accent icon tile top-left). Icon tile (48px, accent-soft background + accent icon). Title (18px/600 Pretendard) + description (14px/400, 2-line clamp). Badges: NEW, Popular, coming-soon + FavoriteButton (rose heart, 44px, positioned top-right outside card or bottom-right corner). Hover (live): shadow lift, 200ms ease-out; press scale 0.99. Focus-visible: 2px primary ring. coming_soon: opacity 0.7, no hover, cursor default. Entire card is Link target (live) or button (coming-soon for future interest capture).
+    - ShareButtons: renders below tool grid or in footer area. Buttons for each platform (facebook, x, naver, threads, telegram, whatsapp, copy, native). Each 44×44px, pill-shaped, with platform icon.
   </home_page>
 
   <tool_page>
     - Breadcrumb: Home > Category > Tool Name (localized, clickable).
+    - ToolCharacter: Per-tool 1:1 visual (slug.webp, e.g., hairstyle-recommendation.webp) displayed as decorative support, responsive width, 300×300px intrinsic.
     - Tool Module: mounts the tool's Client Component (e.g., <HairstyleTool/>). Tool internals per its own SPEC; platform provides Error Boundary + loader context.
+    - ShareButtons: Mounted below tool result or in sticky footer. Same 6-platform + copy + native options.
     - InContent Ad: placed below the interactive tool, height-reserved, consent-gated.
   </tool_page>
 
   <keyboard_shortcuts>
     - "/" → focus home search
     - "Esc" → close search overlay / modal / consent details
-    - Tab order: header controls → category pills → grid cards (DOM order)
+    - Tab order: header controls → category pills → favorites pill → grid cards (DOM order)
   </keyboard_shortcuts>
 
   <legal_pages>
-    About / Privacy / Terms / Contact — simple prose layout (max-width 720px, heading in Pretendard). Privacy + Terms disclose AdSense/GA cookies, consent mechanism, and **ephemeral input guarantee**.
+    About / Privacy / Terms / Contact — simple prose layout (max-width 720px, heading in Gmarket Sans or Pretendard). Privacy + Terms disclose AdSense/GA cookies, consent mechanism, **ephemeral input guarantee**, and favorites/share/character features.
   </legal_pages>
 </pages_and_interfaces>
 
 <core_functionality>
   <tool_hub>
-    - Registry-driven grid: ToolGrid maps registry; adding a tool = ToolMeta entry + messages + module + (optionally) API routes + service SPEC.
-    - Category filter + client-side search over localized name/description/keywords.
-    - Filter/search state mirrored to URL; shareable, back-button friendly.
+    - Registry-driven grid: ToolGrid maps registry; adding a tool = ToolMeta entry (including `accent`) + messages + module + (optionally) API routes + service SPEC + character WebP.
+    - Category filter + favorites filter + client-side search over localized name/description/keywords.
+    - Filter/search/favorites state mirrored to URL; shareable, back-button friendly.
     - Live cards → navigate to tool page; coming_soon → non-clickable or interest-capture CTA (Phase 2).
   </tool_hub>
+
+  <favorites>
+    - Domain logic: src/lib/home-favorites.ts (pure functions, no side effects). Zod schema validates { version: 1, ids: string[] }.
+    - Hook: useHomeFavorites(liveSlugs) — loads favorites, auto-prunes invalid slugs, exports toggleFavorite + filterActive + favorites state.
+    - UI: FavoriteButton (rose heart icon, 44×44px, aria-pressed toggle) on each ToolCard. FavoritesFilterToggle (rose pill, "Show favorites only") in home filter row.
+    - Flow: User clicks heart → toggleFavorite(slug) → persists to localStorage → component re-renders. Click favorites filter → grid re-filters to favorite tools only.
+    - Persistence: localStorage key `ai-jurepi-home-favorites`, versioned schema, survives page reloads + browser restarts, cleared only on localStorage reset.
+  </favorites>
+
+  <sns_share>
+    - Domain logic: src/lib/share.ts (pure functions). No API calls; all share methods construct URLs or use native APIs.
+    - Targets: facebook, x, naver, threads, telegram, whatsapp, copy (to clipboard), native (Web Share API).
+    - ShareButtons component: Renders 8 buttons (or fewer if native not available). Each mounted-gated for no SSR issues. On click, calls appropriate share function (copyLink shows toast).
+    - Placement: Below hero on home; below/near tool result on tool pages. Optional sticky footer version for mobile.
+    - URL & messaging: Share current page URL + i18n'd message per tool (e.g., "Check out Hairstyle Recommendation on ai.jurepi.kr").
+  </sns_share>
+
+  <tool_characters>
+    - Component: ToolCharacter (src/components/layout/ToolCharacter.tsx). Props: slug? (defaults to "home"), alt text.
+    - Renders: <img src={`/characters/${slug}.webp`} alt={alt} /> with 300×300px intrinsic size, responsive width, rounded corners per DESIGN.md.
+    - Placement: Home hero (home.webp). Tool detail pages (tool-specific WebP). Optional on result cards.
+    - Images: Public/characters/[slug].webp. Reuse existing jurepi mascot for now; add per-tool characters as designs are ready.
+  </tool_characters>
 
   <i18n>
     - All visible strings from messages/{ko,en}.json.
     - Locale switch preserves path + query; sets <html lang>.
     - Tool names, descriptions, UI labels keyed by tools.${toolId}.*.
+    - Share message templates keyed by tools.${toolId}.share_message.
   </i18n>
 
   <theming>
     - Light (default) + dark, persisted in localStorage, SSR flash-free (inline bootstrap before paint).
-    - CSS custom properties driven by DESIGN.md tokens.
+    - CSS custom properties driven by DESIGN.md tokens (including accent colors with light/dark variants).
   </theming>
 
   <consent>
     - First visit → banner; choice persisted in localStorage.
     - Ads + GA gated on consent.ads + consent.analytics respectively.
     - Re-openable from footer.
-    - Privacy/Terms explain cookies, tracking, and **ephemeral input guarantee**.
+    - Privacy/Terms explain cookies, tracking, **ephemeral input guarantee**, and common features.
   </consent>
 
   <provider_abstraction>
@@ -510,7 +589,7 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   </server_errors>
 
   <runtime>
-    <localstorage>Private-mode/quota errors caught; theme + consent degrade to in-memory defaults.</localstorage>
+    <localstorage>Private-mode/quota errors caught; theme + consent + favorites degrade to in-memory defaults.</localstorage>
     <api_failures>Retry with backoff (exponential, max 3 attempts) for transient failures (5xx); fail fast for client errors (4xx).
     <ads>AdSense load failure → AdSlot renders nothing (collapses), never blocks content.
   </runtime>
@@ -531,11 +610,11 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   <integration name="Consent CMP">
     <purpose>Lawful basis for ad/analytics cookies (GDPR/ePrivacy/K-ICT)</purpose>
     <flow>First visit (cleared storage) → ConsentBanner ("수락"/"거부"/"설정"); choice → localStorage jurepi-consent; gate scripts; re-open from footer.</flow>
-    <message>Include ephemeral input guarantee in Privacy policy.
+    <message>Include ephemeral input guarantee, favorites, SNS share, and character features in Privacy policy.</message>
   </integration>
 
   <integration name="Google Analytics 4" optional="true">
-    <events>tool_open (slug), locale_switch, search_query (no PII); consent.analytics gated</events>
+    <events>tool_open (slug), locale_switch, search_query, favorite_toggled (no PII); consent.analytics gated</events>
   </integration>
 
   <integration name="AI Providers (Gemini, Claude, etc.)">
@@ -550,31 +629,31 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     <deployment>OpenNext adapter (@opennextjs/cloudflare) → Workers; KV binding RATE_LIMIT_KV (optional, falls back to memory).</deployment>
   </integration>
 
-  <integration name="Fonts">Self-hosted Pretendard (weights 400/500/600/700) via next/font/local, subset, font-display: swap, preload primary weight only. Single family for both display and body; hierarchy via size, weight, and tracking.</integration>
+  <integration name="Fonts">Self-hosted Gmarket Sans (weight 700 only) + Pretendard (weights 400/500/600/700) via next/font/local, subset, font-display: swap. Gmarket Sans for display roles; Pretendard for body/UI. Preload Pretendard 400 only.</integration>
 </third_party_integrations>
 
 <aesthetic_guidelines>
   <source>CRITICAL: DESIGN.md is the single source of truth for tokens and component styling. src/styles/tokens.css mirrors it exactly. This SPEC references DESIGN decisions by name but does NOT duplicate token values.</source>
 
-  <direction>Bright, friendly, playful, light-first. White cards on warm-cream ground lifted by soft shadows; single brand-red (#e60023) accent for all primary CTAs and active states; categories exist for filtering/grouping only (no color identity); rounded corners (16–28px); all interactive elements use brand-red for primary actions.</direction>
+  <direction>Bright, friendly, playful, light-first. White cards on warm-cream ground lifted by soft shadows; brand red (#e60023) primary for CTAs and active states; **category accents** (coral/mint/sky/sun/grape/rose) on icon tiles, category pills, favorites, and accent chips; rounded corners (16–32px); all interactive elements follow accent discipline per DESIGN.md.</direction>
 
   <main_screen_usage>
-    - Hero H1 in Pretendard; everything else Pretendard.
-    - Tool cards use neutral surfaces; brand red is reserved for CTAs/links/active states (used sparingly, per DESIGN.md single-accent discipline).
+    - Hero H1 in Gmarket Sans 700; everything else Pretendard.
+    - Tool cards: category accent tints icon tile (soft background + saturated icon + glyph). FavoriteButton rose heart sits top-right or corner-overlay.
     - Cards lift on hover (--shadow-card → --shadow-card-hover), press scale 0.99, focus-visible brand ring.
     - Section rhythm 48–64px; grid gap 20px; container max 1120px.
   </main_screen_usage>
 
   <responsive>
     Breakpoints: 0–479 (1-col) / 480–767 (2-col) / 768–1023 (3-col) / 1024+ (4-col, 1120px).
-    Header stays compact (no hamburger). Touch targets ≥44px.
+    Header stays compact (no hamburger). Touch targets ≥44px (especially FavoriteButton + ShareButtons).
   </responsive>
 
   <accessibility>
     WCAG 2.1 AA: main text >=4.5:1 contrast, large text >=3:1, buttons >=3:1.
     Full keyboard nav, visible focus-visible rings, prefers-reduced-motion honored (no transforms, fade only).
     Semantic <header>/<main>/<footer>/<nav>, one H1 per page, correct <html lang> + hreflang.
-    Color not sole indicator of state. Images have alt text. Form inputs have labels.
+    Color not sole indicator of state. Images have alt text. Form inputs have labels. FavoriteButton uses aria-pressed.
   </accessibility>
 </aesthetic_guidelines>
 
@@ -605,7 +684,7 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   <privacy>
     - No tracking before consent.
     - AdSense + GA strictly consent-gated.
-    - Privacy/Terms disclose cookies, tracking, **input ephemeralness**, and how to withdraw consent.
+    - Privacy/Terms disclose cookies, tracking, **input ephemeralness**, favorites (localStorage), share (URL only, no logging), and character images (CDN).
     - Input data never shared with third parties (goes only to selected AI provider for inference).
   </privacy>
 
@@ -618,10 +697,10 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
 
 <advanced_functionality>
   <extensible_tool_registry>
-    Registry is the backbone: hub UI, sitemap, static params, SEO all derive from it. New tool = (1) ToolMeta entry, (2) i18n messages (tools.${id}.*), (3) UI component folder, (4) optional API routes (if AI-enabled), (5) service SPEC. coming_soon tools need only the ToolMeta entry + messages.
+    Registry is the backbone: hub UI, sitemap, static params, SEO all derive from it. New tool = (1) ToolMeta entry (including `accent` field), (2) i18n messages (tools.${id}.*), (3) UI component folder, (4) character WebP (public/characters/[slug].webp), (5) optional API routes (if AI-enabled), (6) service SPEC. coming_soon tools need only ToolMeta + messages.
   </extensible_tool_registry>
 
-  <theme_switching>Light/dark/system, persisted, SSR flash-free.</theme_switching>
+  <theme_switching>Light/dark/system, persisted, SSR flash-free. Accent colors adapt per DESIGN.md (light vs dark variant tokens).</theme_switching>
 
   <provider_swapping>
     Change AI_PROVIDER env → factory selects different implementation → same routes + UI work with a new provider. E.g., swap Gemini → Claude without touching any route handler or component.
@@ -638,24 +717,28 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
 
 <final_integration_test>
   <test_scenario_1>
-    <description>Main dashboard: browse, filter, search, select</description>
+    <description>Main dashboard: browse, filter, search, favorites, share</description>
     <steps>
-      1. Visit / → 307 redirect to /ko; home renders hero + tool grid with live + coming_soon cards.
+      1. Visit / → 307 redirect to /ko; home renders hero + tool grid with live + coming_soon cards. Tool cards show category accent icon tiles.
       2. Verify live cards (e.g., hairstyle-recommendation) are clickable; coming_soon show "준비중" badge + non-clickable.
-      3. Click category pill → grid filters; URL updates ?cat=... (e.g., ?cat=beauty).
-      4. Type search term → grid narrows; debounced 120ms; URL gains ?search=....
-      5. Click a live card → navigate to /ko/tools/[slug] (static page + tool module).
-      6. Non-matching search → EmptyState + reset link.
+      3. Click heart on tool card → FavoriteButton toggles, favorites update in localStorage.
+      4. Click "Show favorites only" filter pill → grid shows only favorite tools.
+      5. Click category pill → grid filters; URL updates ?cat=... (e.g., ?cat=beauty).
+      6. Type search term → grid narrows; debounced 120ms; URL gains ?search=....
+      7. Click share button → Share sheet or platform-specific intent opens.
+      8. Click a live card → navigate to /ko/tools/[slug] (static page + tool module + tool character + share buttons).
+      9. Non-matching search → EmptyState + reset link.
     </steps>
   </test_scenario_1>
 
   <test_scenario_2>
-    <description>i18n + theme persistence</description>
+    <description>i18n + theme persistence + favorites cross-session</description>
     <steps>
       1. From /ko, switch locale to en → navigate to /en preserving page + query.
       2. Verify all UI + tool names switch to English; <html lang="en">; hreflang alternates present.
-      3. Toggle dark theme → tokens switch, no flash on reload. Reload → theme persists.
-      4. OS reduced-motion on → card hovers render without transforms (fade/shadow only).
+      3. Click favorites + reload → favorites persisted in localStorage, visible on page load.
+      4. Toggle dark theme → tokens switch, no flash on reload. Reload → theme persists.
+      5. OS reduced-motion on → card hovers render without transforms (fade/shadow only).
     </steps>
   </test_scenario_2>
 
@@ -691,31 +774,36 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   </test_scenario_5>
 
   <test_scenario_6>
-    <description>SEO + static generation</description>
+    <description>SEO + static generation + tool characters</description>
     <steps>
       1. Production build → every live tool page statically generated per-locale.
       2. /sitemap.xml lists live tools × locales + static pages; all absolute URLs; canonicals match.
       3. /robots.txt allows all + references sitemap.
       4. Tool page has SoftwareApplication + FAQPage JSON-LD + OG defaults.
       5. Unknown slug → localized 404 (not server error).
+      6. Home page loads home.webp character; tool pages load tool-specific character (e.g., hairstyle-recommendation.webp).
     </steps>
   </test_scenario_6>
 </final_integration_test>
 
 <success_criteria>
   <functionality>
-    - Home grid renders all live registry tools; filter + search work and mirror to URL.
+    - Home grid renders all live registry tools with category accent icon tiles; filter + search + favorites work and mirror to URL.
     - Live cards navigate; coming_soon non-clickable.
-    - i18n/theme/consent correct; every live tool is separately indexable SSG page.
+    - i18n/theme/consent/favorites correct; every live tool is separately indexable SSG page.
     - API endpoints return typed ApiEnvelope; validation works; rate limit enforced.
     - Input is ephemeral (verified via logs + code review).
+    - FavoriteButton toggles persist to localStorage; FavoritesFilterToggle filters grid correctly.
+    - ShareButtons render on home + tool pages; click opens appropriate share intent (platform or native).
+    - ToolCharacter images load correctly (home + per-tool).
   </functionality>
 
   <user_experience>
     - Core Web Vitals (Lighthouse mobile): LCP <2.5s, FCP <1.5s, INP <200ms, CLS <0.1, TBT <200ms.
     - Search keystroke→filter <50ms (debounced).
-    - Visible focus + ≥44px tap targets.
+    - Visible focus + ≥44px tap targets (especially FavoriteButton + ShareButtons).
     - Reduced-motion respected.
+    - Favorites persist across sessions.
   </user_experience>
 
   <technical_quality>
@@ -726,10 +814,10 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   </technical_quality>
 
   <visual_design>
-    - Matches DESIGN.md tokens; not a default Tailwind template.
+    - Matches DESIGN.md tokens; category accent icon tiles visible on every tool card.
     - Intentional hover/press/focus states.
-    - Light (and optional dark) feel designed.
-    - Single brand-red accent for CTAs/active states; neutral card surfaces; cohesive single-accent system per DESIGN.md.
+    - Light (and optional dark) feel designed with accent colors.
+    - Brand red primary for CTAs; category accents for secondary UI (icon tiles, badges, pills); cohesive per-category system per DESIGN.md.
   </visual_design>
 
   <build>
@@ -751,44 +839,55 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     - Cloudflare Pages or Workers (via open-next.config.ts + wrangler.toml).
     - Set environment secrets: AI_PROVIDER, GEMINI_API_KEY, RATE_LIMIT_KV (KV binding), rate-limit overrides.
     - Configure CSP + security headers (via _headers file or wrangler.toml).
+    - Ensure public/characters/*.webp files are deployed as static assets.
   </deployment>
 </build_output>
 
 <key_implementation_notes>
   <critical_paths>
-    1. Tool registry + types + dynamic SSG route (hub backbone).
+    1. Tool registry + types (including `accent` field) + dynamic SSG route (hub backbone).
     2. AI provider abstraction + factory (enables provider swapping).
     3. API envelope contract + Zod validation (platform-wide consistency).
     4. Rate-limit layer (per-IP, reusable by all tools).
-    5. Design tokens (tokens.css ↔ DESIGN.md).
+    5. Design tokens (tokens.css ↔ DESIGN.md, including 6 category accents).
     6. Ephemeral input enforcement (code review + docs).
     7. OpenNext config + Workers deployment (server runtime).
+    8. **Favorites domain logic** (pure functions in src/lib/home-favorites.ts + useHomeFavorites hook).
+    9. **Share targets** (pure functions in src/lib/share.ts + ShareButtons component).
+    10. **Tool characters** (ToolCharacter component + public/characters/*.webp assets).
   </critical_paths>
 
   <recommended_implementation_order>
-    1. Scaffold Next.js 15 + TS strict + Tailwind v4 + tokens.css + next-intl (ko/en).
-    2. UI primitives + layout shell (Header/Footer/ThemeProvider flash-free/LocaleSwitcher).
-    3. Tool registry + types + ko/en messages.
-    4. Main dashboard: Hero, SearchBar, CategoryFilter, ToolGrid, ToolCard (all states + empty).
-    5. OpenNext config + Workers adapter setup (local dev + Cloudflare deployment).
-    6. API envelope + Zod schema + rate-limit layer (shared platform code).
-    7. Dynamic tool route + Error Boundary + breadcrumb.
-    8. First AI tool: HairstyleAI port interface + GeminiProvider + route handlers + tool component.
-    9. Consent + AdSlot + AdSense wiring (consent-gated, lazy).
-    10. SEO: buildMetadata, WebSite JSON-LD, sitemap.ts, robots.ts, manifest.ts, hreflang/canonical.
-    11. Legal pages (About/Privacy/Terms/Contact); GA optional (consent-gated).
-    12. Responsive + a11y pass; Lighthouse/visual regression at 320/375/768/1024/1440.
-    13. Test coverage (>=80%); integration tests (provider mock, rate-limit, envelope contract).
-    14. Polish: empty states, 404, toast, edge cases, reduced-motion.
-    15. Deployment runbook + monitoring + log analysis (ephemeral-input verification).
+    1. Scaffold Next.js 15 + TS strict + Tailwind v4 + tokens.css (WITH 6 accent colors) + next-intl (ko/en).
+    2. Install Gmarket Sans + Pretendard fonts via next/font/local.
+    3. UI primitives + layout shell (Header/Footer with Gmarket Sans wordmark/ThemeProvider flash-free/LocaleSwitcher).
+    4. Tool registry + types (add `accent: AccentColor` field) + ko/en messages.
+    5. Main dashboard: Hero (Gmarket Sans H1), SearchBar, CategoryFilter, FavoritesFilterToggle, ToolGrid, ToolCard (category accent icon tile + FavoriteButton) (all states + empty).
+    6. Favorites domain (src/lib/home-favorites.ts) + useHomeFavorites hook + localStorage integration.
+    7. ShareButtons component + share targets (src/lib/share.ts).
+    8. ToolCharacter component + public/characters/ assets (reuse jurepi mascot for now).
+    9. OpenNext config + Workers adapter setup (local dev + Cloudflare deployment).
+    10. API envelope + Zod schema + rate-limit layer (shared platform code).
+    11. Dynamic tool route + Error Boundary + breadcrumb.
+    12. First AI tool: HairstyleAI port interface + GeminiProvider + route handlers + tool component.
+    13. Consent + AdSlot + AdSense wiring (consent-gated, lazy).
+    14. SEO: buildMetadata, WebSite JSON-LD, sitemap.ts, robots.ts, manifest.ts, hreflang/canonical.
+    15. Legal pages (About/Privacy/Terms/Contact with updated copy for common features); GA optional (consent-gated).
+    16. Responsive + a11y pass; Lighthouse/visual regression at 320/375/768/1024/1440.
+    17. Test coverage (>=80%); integration tests (provider mock, rate-limit, envelope contract, favorites, share, characters).
+    18. Polish: empty states, 404, toast, edge cases, reduced-motion.
+    19. Deployment runbook + monitoring + log analysis (ephemeral-input verification).
   </recommended_implementation_order>
 
   <tool_registry_example>
     ```typescript
     // src/tools/types.ts
     export type ToolCategory = 'beauty' | 'text' | 'dev' | 'random' | 'converter' | 'calculator' | 'fun' | 'mindset' | 'news';
+    export type AccentColor = 'coral' | 'mint' | 'sky' | 'sun' | 'grape' | 'rose';
+    
     export interface ToolMeta {
       id: string; slug: string; category: ToolCategory; icon: string;
+      accent: AccentColor; // NEW — per-category color identity
       status: 'live' | 'coming_soon';
       addedAt: string; isPopular?: boolean; order: number; keywords: string[];
       hasServer?: boolean; // marks tools that require /api/** routes
@@ -798,6 +897,7 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
     export const tools: ToolMeta[] = [
       {
         id: 'hairstyle-recommendation', slug: 'hairstyle-recommendation', category: 'beauty',
+        accent: 'rose', // Beauty tools use rose accent
         icon: 'Scissors', status: 'live', addedAt: '2026-06-20',
         isPopular: true, order: 10, hasServer: true,
         keywords: ['헤어스타일', '얼굴형', 'hairstyle', 'face shape', 'recommendation', 'AI'],
@@ -882,25 +982,26 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
   <performance>
     - Tool pages are Server Components; only tool subtree is "use client".
     - Defer AdSense/GA via lazyOnload post-consent.
-    - Self-host + subset fonts; reserve ad heights (CLS).
-    - Optimize images: explicit dimensions, lazy-loading (below-fold), AVIF/WebP + fallback.
+    - Self-host + subset both Gmarket Sans + Pretendard fonts; reserve ad heights (CLS).
+    - Optimize images: explicit dimensions, lazy-loading (below-fold), AVIF/WebP + fallback. ToolCharacter images (public/characters/*.webp) lazy-loaded.
     - Dynamic imports for heavy provider SDKs (only in route handlers, never client).
   </performance>
 
   <testing_strategy>
-    - Unit (Vitest): search matcher, consent gating, schema validation, provider mocks.
-    - Component (Playwright): ToolCard states, ConsentBanner, CategoryFilter, SearchBar.
-    - E2E (Playwright): the six integration test scenarios above.
-    - Visual regression: home at 320/768/1024/1440, both themes.
-    - A11y (axe + manual): keyboard nav, color contrast, reduced-motion, labels.
+    - Unit (Vitest): favorites domain (loadFavorites, toggleFavorite, filterByFavorites), share targets (all platform functions), search matcher, consent gating, schema validation, provider mocks.
+    - Component (Playwright): FavoriteButton states, ShareButtons rendering, ToolCard with accent, CategoryFilter, FavoritesFilterToggle, SearchBar.
+    - E2E (Playwright): the six integration test scenarios above + favorites persistence.
+    - Visual regression: home at 320/768/1024/1440, both themes (including accent colors + character images).
+    - A11y (axe + manual): keyboard nav (favorite toggle, share buttons), color contrast (accent colors on soft backgrounds), reduced-motion, labels.
     - API contract tests: envelope shape, error codes, rate-limit responses (mocked provider).
   </testing_strategy>
 
   <code_organization>
     - Each tool gets a folder under lib/[tool-name]/; API endpoints under app/api/[tool]/.
-    - Shared platform code: lib/api-envelope.ts, lib/rate-limit.ts, lib/seo.ts, lib/consent.ts.
-    - UI primitives: components/ui/; layout: components/layout/; home: components/home/.
+    - Shared platform code: lib/api-envelope.ts, lib/rate-limit.ts, lib/seo.ts, lib/consent.ts, **lib/home-favorites.ts**, **lib/share.ts**.
+    - UI primitives: components/ui/; layout: components/layout/ (Header, Footer, **ShareButtons**, **FavoriteButton**, **ToolCharacter**); home: components/home/.
     - Tool UI: components/tools/[tool-name]/.
+    - Common features: hooks/useHomeFavorites.ts, lib/home-favorites.ts, lib/share.ts, components/layout/ShareButtons.tsx.
     - No file >800 lines; aim for 200–400.
   </code_organization>
 </key_implementation_notes>

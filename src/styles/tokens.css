@@ -10,6 +10,26 @@
   --primary-pressed: #cc001f;
   --on-primary: #ffffff;
 
+  /* Category Accents (6-color system: coral/mint/sky/sun/grape/rose) */
+  --accent-coral: #ff7a85;
+  --accent-coral-soft: #ffe7e9;
+  --accent-coral-ink: #b3243c;
+  --accent-mint: #2dd4bf;
+  --accent-mint-soft: #d7f7f2;
+  --accent-mint-ink: #0f766e;
+  --accent-sky: #38bdf8;
+  --accent-sky-soft: #ddf2fe;
+  --accent-sky-ink: #0369a1;
+  --accent-sun: #fbbf24;
+  --accent-sun-soft: #fef1d2;
+  --accent-sun-ink: #92400e;
+  --accent-grape: #e0912b;
+  --accent-grape-soft: #fbe8cb;
+  --accent-grape-ink: #8a5300;
+  --accent-rose: #fb7185;
+  --accent-rose-soft: #fee2e7;
+  --accent-rose-ink: #9f1239;
+
   /* Surfaces (Cream-tinted Neutrals) */
   --canvas: #ffffff;
   --surface-soft: #fbfbf9;
@@ -62,7 +82,7 @@
   --space-section: 64px;
 
   /* Typography */
-  --font-display: Pretendard, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+  --font-display: 'Gmarket Sans', Pretendard, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
   --font-body: Pretendard, -apple-system, system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
 
   /* Shadows */
@@ -78,9 +98,11 @@
 
 /* Light mode (default — no media override) */
 
-/* Dark mode (optional @media override) */
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Dark mode — driven by the `.dark` class on <html>, set pre-paint by the
+   bootstrap script in layout.tsx (theme==='dark', or OS-dark when the user
+   hasn't chosen). An explicit light choice removes `.dark`, so the user's
+   pick always wins over the OS preference. */
+:root.dark {
     /* Surfaces flip to dark */
     --canvas: #1a1a1a;
     --surface-soft: #242424;
@@ -106,7 +128,26 @@
     /* Semantic colors adjusted for dark mode */
     --success-pale: #1a4d3d;
     --warning: #f5b623;
-  }
+
+    /* Category Accents (dark mode: base hues unchanged, -ink lighter, -soft mixed with surface-card) */
+    --accent-coral: #ff7a85;
+    --accent-coral-soft: color-mix(in srgb, var(--accent-coral) 22%, var(--surface-card));
+    --accent-coral-ink: #fda4af;
+    --accent-mint: #2dd4bf;
+    --accent-mint-soft: color-mix(in srgb, var(--accent-mint) 20%, var(--surface-card));
+    --accent-mint-ink: #5eead4;
+    --accent-sky: #38bdf8;
+    --accent-sky-soft: color-mix(in srgb, var(--accent-sky) 20%, var(--surface-card));
+    --accent-sky-ink: #7dd3fc;
+    --accent-sun: #fbbf24;
+    --accent-sun-soft: color-mix(in srgb, var(--accent-sun) 20%, var(--surface-card));
+    --accent-sun-ink: #fcd34d;
+    --accent-grape: #e0912b;
+    --accent-grape-soft: color-mix(in srgb, var(--accent-grape) 22%, var(--surface-card));
+    --accent-grape-ink: #f0bc5e;
+    --accent-rose: #fb7185;
+    --accent-rose-soft: color-mix(in srgb, var(--accent-rose) 22%, var(--surface-card));
+    --accent-rose-ink: #fda4af;
 }
 
 /**

@@ -19,3 +19,4 @@
 | 2026-07-17 | 플랫폼 SPEC(`docs/SPEC.md`) 작성 + DESIGN.md 정리(Pinterest 잔재 제거) + 시각 정체성 확정(단일 레드 #e60023 액센트·Pretendard 단일·카테고리 액센트 없음) | docs/SPEC.md, docs/DESIGN.md | 플랫폼 기반 수립 |
 | 2026-07-17 | 지침 2건 추가: ①구현 전 SPEC(플랫폼/도구) 선행 갱신 ②착수 전 워크트리 격리 판단(애매하면 사용자에 질의) | skills/ai-jurepi-build (Phase 0 + 게이트) | 사용자 피드백 |
 | 2026-07-17 | 첫 도구 SPEC(hairstyle EN+KR)을 확정 디자인(레드 단일 액센트·Pretendard·플랫 elevation·16/32 라운드)으로 정렬; blossom 액센트 제거, beauty 카테고리 유지 | docs/services/beauty/hairstyle-recommendation/SPEC.md·SPEC_KR.md | SPEC 선행 규칙 적용 |
+| 2026-07-18 | 설계 시스템 재정렬: red primary 유지 + 6-color 카테고리 액센트 도입(coral/mint/sky/sun/grape/rose), Gmarket Sans display 추가(Pretendard body), 공통 기능 3종 포팅(favorites·SNS share·tool characters) — 2026-07-17 단일-액센트 결정 역전, apps.jurepi.kr과 일관성 추구 | docs/DESIGN.md, docs/SPEC.md, _workspace/1_architect_blueprint.md | 사용자 지시(형제 사이트 정렬) |

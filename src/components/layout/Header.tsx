@@ -16,7 +16,7 @@ export function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="text-heading-md font-bold text-ink hover:text-primary transition-colors"
+          className="font-display text-heading-md font-bold text-ink hover:text-primary transition-colors"
           aria-label="ai.jurepi.kr Home"
         >
           ai.jurepi.kr
