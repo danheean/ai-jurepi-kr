@@ -91,7 +91,8 @@
         "remove": "Remove",
         "analyzing": "Analyzing your face shape...",
         "errorType": "Unsupported image type. Use PNG, JPG, or WebP.",
-        "errorSize": "Image is too large. Use a file under 5 MB."
+        "errorSize": "Image is too large. Use a file under 5 MB.",
+        "choose": "Choose a photo"
       },
       "face": {
         "oval": "Oval",

@@ -91,7 +91,8 @@
         "remove": "삭제",
         "analyzing": "얼굴형을 분석 중입니다...",
         "errorType": "지원하지 않는 이미지 형식입니다. PNG, JPG, WebP를 사용해주세요.",
-        "errorSize": "이미지가 너무 큽니다. 5MB 이하의 이미지를 사용해주세요."
+        "errorSize": "이미지가 너무 큽니다. 5MB 이하의 이미지를 사용해주세요.",
+        "choose": "사진 선택하기"
       },
       "face": {
         "oval": "타원형",

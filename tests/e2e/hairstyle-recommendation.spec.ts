@@ -187,6 +187,10 @@ test('photo path (ko): upload → analyzing → attributes → recommend → 3+ 
   // Step 1: Choose "Upload a photo" path
   await page.getByRole('button', { name: /사진 업로드|Upload a photo/i }).click();
 
+  // Regression guard: the empty dropzone offers "choose", never a stray "remove"
+  await expect(page.getByRole('button', { name: '사진 선택하기' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '삭제' })).toHaveCount(0);
+
   // Step 2: Upload a file
   const dummyPNG = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
