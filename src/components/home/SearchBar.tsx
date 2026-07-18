@@ -13,6 +13,8 @@ interface SearchBarProps {
  * SearchBar: magnifying glass icon + input + rounded-full.
  * Live search with debounce would be added here if needed.
  */
+const SEARCH_DEBOUNCE_MS = 200;
+
 export function SearchBar({ onSearch, initialQuery = '' }: SearchBarProps) {
   const t = useTranslations('home');
   const [query, setQuery] = useState(initialQuery);
@@ -21,13 +23,19 @@ export function SearchBar({ onSearch, initialQuery = '' }: SearchBarProps) {
     setQuery(initialQuery);
   }, [initialQuery]);
 
+  // Debounce the parent filter so it doesn't run on every keystroke. Cheap at
+  // one tool today; keeps typing smooth as the catalog grows. The input stays
+  // controlled by `query`, so keystrokes remain instant.
+  useEffect(() => {
+    const id = setTimeout(() => onSearch(query), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [query, onSearch]);
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setQuery(value);
-      onSearch(value);
+      setQuery(e.target.value);
     },
-    [onSearch]
+    []
   );
 
   return (

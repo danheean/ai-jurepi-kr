@@ -26,7 +26,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/"
-                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.home')}
                 </Link>
@@ -42,7 +42,7 @@ export function Footer() {
                   href={`${APPS_URL}/${locale}/about`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.about')}
                 </a>
@@ -52,7 +52,7 @@ export function Footer() {
                   href={`${APPS_URL}/${locale}/contact`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.contact')}
                 </a>
@@ -66,7 +66,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/privacy"
-                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.privacy')}
                 </Link>
@@ -74,7 +74,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/terms"
-                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   {t('nav.terms')}
                 </Link>
@@ -90,7 +90,7 @@ export function Footer() {
                   href="https://github.com/jurepi"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block py-xxs text-body-sm text-mute hover:text-ink transition-colors"
+                  className="inline-flex items-center min-h-11 -mx-xs px-xs text-body-sm text-mute hover:text-ink transition-colors"
                 >
                   GitHub
                 </a>
