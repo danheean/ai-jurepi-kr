@@ -47,6 +47,28 @@ describe('buildAnalyzePrompt', () => {
     expect(buildAnalyzePrompt('en')).toContain('240');
     expect(buildAnalyzePrompt('ko')).toContain('240');
   });
+
+  it('ko prompt demands Korean-language features and notes', () => {
+    const prompt = buildAnalyzePrompt('ko');
+    expect(prompt).toContain('한국어로');
+    // Feature examples must be Korean, not English
+    expect(prompt).not.toContain('strong jawline');
+    expect(prompt).not.toContain('high forehead');
+    expect(prompt).toContain('각진 턱선');
+  });
+
+  it('en prompt demands English-language features and notes', () => {
+    const prompt = buildAnalyzePrompt('en');
+    expect(prompt).toContain('in English');
+  });
+
+  it('both locales keep enum values in English regardless of output language', () => {
+    for (const locale of ['ko', 'en'] as const) {
+      const prompt = buildAnalyzePrompt(locale);
+      expect(prompt).toContain('"oval"');
+      expect(prompt).toContain('"male"');
+    }
+  });
 });
 
 describe('buildRecommendPrompt', () => {
@@ -263,6 +285,19 @@ describe('buildRecommendPrompt', () => {
     const prompt = buildRecommendPrompt(input, candidates, 'ko');
     expect(prompt).toContain('당신은');
     expect(prompt).toContain('추천');
+  });
+
+  it('demands distinct, non-repeated reasons in both locales', () => {
+    const input = {
+      faceShape: 'oval' as const,
+      preference: 'masculine' as const,
+      occasion: 'daily' as const,
+      locale: 'ko' as const,
+    };
+    const candidates = matchCandidates({ faceShape: 'oval' });
+
+    expect(buildRecommendPrompt(input, candidates, 'ko')).toContain('겹치지');
+    expect(buildRecommendPrompt(input, candidates, 'en')).toContain('distinct');
   });
 });
 

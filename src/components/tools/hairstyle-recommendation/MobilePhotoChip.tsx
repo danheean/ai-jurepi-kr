@@ -43,7 +43,7 @@ export default function MobilePhotoChip({
       {/* Replace button */}
       <button
         onClick={onReplace}
-        className="text-xs text-mute hover:text-charcoal underline flex-shrink-0"
+        className="inline-flex items-center min-h-[44px] px-2 -mr-1 text-xs text-mute hover:text-charcoal underline flex-shrink-0"
       >
         {t('workspace.replacePhoto')}
       </button>

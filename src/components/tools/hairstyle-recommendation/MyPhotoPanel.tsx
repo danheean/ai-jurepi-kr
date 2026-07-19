@@ -23,12 +23,12 @@ export default function MyPhotoPanel({
 
   return (
     <div
-      className="rounded-md bg-white p-4 space-y-3"
+      className="rounded-md bg-canvas p-4 space-y-3"
       data-testid="my-photo-panel"
     >
-      <h3 className="text-sm font-bold text-charcoal">
+      <h2 className="text-sm font-bold text-charcoal">
         {t('workspace.myPhotoTitle')}
-      </h3>
+      </h2>
 
       <img
         src={photoUrl}
@@ -59,6 +59,7 @@ export default function MyPhotoPanel({
             <button
               role="switch"
               aria-checked={facePreviewEnabled}
+              aria-labelledby="face-preview-label"
               onClick={() => onFacePreviewToggle(!facePreviewEnabled)}
               className={`w-10 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-outer focus-visible:ring-offset-2 ${
                 facePreviewEnabled
@@ -67,14 +68,18 @@ export default function MyPhotoPanel({
               }`}
             >
               <span
-                className={`block w-5 h-5 rounded-full bg-white transition-transform ${
+                className={`block w-5 h-5 rounded-full bg-white border border-hairline transition-transform ${
                   facePreviewEnabled ? 'translate-x-4' : 'translate-x-0.5'
                 }`}
               />
             </button>
-            <label className="text-sm font-body-strong text-charcoal cursor-pointer">
+            <span
+              id="face-preview-label"
+              onClick={() => onFacePreviewToggle(!facePreviewEnabled)}
+              className="text-sm font-semibold text-charcoal cursor-pointer select-none"
+            >
               {t('workspace.facePreviewLabel')}
-            </label>
+            </span>
           </div>
           <p className="text-caption-sm text-mute">
             {t('workspace.facePreviewNote')}

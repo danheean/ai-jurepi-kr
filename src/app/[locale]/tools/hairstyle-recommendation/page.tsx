@@ -49,8 +49,8 @@ export default async function HairstyleRecommendationPage({ params }: Props) {
         <h1 className="text-3xl font-bold text-charcoal mb-4">
           {t('title')}
         </h1>
-        <p className="text-muted mb-6">{t('description')}</p>
-        <p className="text-secondary">Tool not yet available.</p>
+        <p className="text-mute mb-6">{t('description')}</p>
+        <p className="text-mute">Tool not yet available.</p>
       </div>
     );
   }
@@ -172,7 +172,7 @@ export default async function HairstyleRecommendationPage({ params }: Props) {
 
         {/* How-To Section */}
         <section className="mb-12 border-t border-hairline pt-8">
-          <h2 className="text-2xl font-bold text-charcoal mb-6">
+          <h2 className="font-display text-heading-xl font-bold text-ink mb-6">
             {t('howto.title')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -210,7 +210,7 @@ export default async function HairstyleRecommendationPage({ params }: Props) {
 
         {/* FAQ Section */}
         <section className="mb-12 border-t border-hairline pt-8">
-          <h2 className="text-2xl font-bold text-charcoal mb-6">
+          <h2 className="font-display text-heading-xl font-bold text-ink mb-6">
             {t('faq.title')}
           </h2>
           <div className="space-y-3">
@@ -219,7 +219,7 @@ export default async function HairstyleRecommendationPage({ params }: Props) {
                 <span>{t('faq.q1')}</span>
                 <span className="transition-transform group-open:rotate-180">▼</span>
               </summary>
-              <p className="mt-3 text-secondary leading-relaxed">
+              <p className="mt-3 text-charcoal leading-relaxed">
                 {t('faq.a1')}
               </p>
             </details>
@@ -229,7 +229,7 @@ export default async function HairstyleRecommendationPage({ params }: Props) {
                 <span>{t('faq.q2')}</span>
                 <span className="transition-transform group-open:rotate-180">▼</span>
               </summary>
-              <p className="mt-3 text-secondary leading-relaxed">
+              <p className="mt-3 text-charcoal leading-relaxed">
                 {t('faq.a2')}
               </p>
             </details>
@@ -239,7 +239,7 @@ export default async function HairstyleRecommendationPage({ params }: Props) {
                 <span>{t('faq.q3')}</span>
                 <span className="transition-transform group-open:rotate-180">▼</span>
               </summary>
-              <p className="mt-3 text-secondary leading-relaxed">
+              <p className="mt-3 text-charcoal leading-relaxed">
                 {t('faq.a3')}
               </p>
             </details>

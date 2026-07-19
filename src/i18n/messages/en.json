@@ -141,10 +141,13 @@
         "featuresLabel": "Features"
       },
       "result": {
+        "title": "Recommendations",
+        "readyAnnounce": "{count} hairstyle recommendations are ready",
         "tipsLabel": "Styling tips",
         "regenerate": "Regenerate",
         "copySummary": "Copy summary",
         "copied": "Copied!",
+        "copyFailed": "Copy failed. Please try again.",
         "share": "Share",
         "reset": "Start over",
         "empty": "No matches found"

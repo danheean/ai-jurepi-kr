@@ -29,9 +29,9 @@ export default function EntryChooser({ onChoose }: EntryChooserProps) {
           </div>
 
           {/* Title */}
-          <h3 className="text-heading-md font-heading-md text-ink mb-1">
+          <span className="block text-heading-md font-semibold text-ink mb-1">
             {t('entry.photoLabel')}
-          </h3>
+          </span>
 
           {/* Subtitle */}
           <p className="text-body-sm text-mute">
@@ -50,9 +50,9 @@ export default function EntryChooser({ onChoose }: EntryChooserProps) {
           </div>
 
           {/* Title */}
-          <h3 className="text-heading-md font-heading-md text-ink mb-1">
+          <span className="block text-heading-md font-semibold text-ink mb-1">
             {t('entry.manualLabel')}
-          </h3>
+          </span>
 
           {/* Subtitle */}
           <p className="text-body-sm text-mute">

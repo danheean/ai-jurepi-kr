@@ -141,10 +141,13 @@
         "featuresLabel": "특징"
       },
       "result": {
+        "title": "추천 결과",
+        "readyAnnounce": "헤어스타일 추천 {count}개가 준비되었습니다",
         "tipsLabel": "스타일링 팁",
         "regenerate": "다시 추천받기",
         "copySummary": "요약 복사",
         "copied": "복사되었습니다",
+        "copyFailed": "복사에 실패했습니다. 다시 시도해주세요.",
         "share": "공유하기",
         "reset": "처음부터",
         "empty": "추천할 스타일이 없습니다"

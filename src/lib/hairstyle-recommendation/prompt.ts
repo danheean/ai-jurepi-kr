@@ -33,10 +33,11 @@ export function buildAnalyzePrompt(locale: 'ko' | 'en'): string {
   "faceShape": "oval" | "round" | "square" | "heart" | "oblong" | "diamond" | "triangle",
   "confidence": 0.0 ~ 1.0 사이의 숫자 (모델의 확실성),
   "gender": "male" | "female" | "unknown" (사진에서 인지되는 성별 표현; 불확실할 때는 "unknown"),
-  "features": ["특징1", "특징2", ...] (최대 5개, 예: "strong jawline", "high forehead"),
-  "notes": "선택사항, 240자 이하의 중립적 설명"
+  "features": ["특징1", "특징2", ...] (최대 5개, 반드시 한국어로. 예: "각진 턱선", "넓은 이마"),
+  "notes": "선택사항, 240자 이하의 중립적 설명 (반드시 한국어로)"
 }
 
+faceShape·gender 값은 위에 나열된 영문 열거값을 그대로 사용하되, features와 notes의 텍스트는 반드시 한국어로 작성하세요.
 얼굴이 명확하게 보이지 않으면 정직하게 confidence를 낮추세요. 의료 진단은 하지 마세요.`;
   }
 
@@ -50,6 +51,7 @@ export function buildAnalyzePrompt(locale: 'ko' | 'en'): string {
   "notes": "optional, max 240 chars, neutral description"
 }
 
+Write the "features" and "notes" text in English. Use the English enum values listed above for faceShape and gender.
 If a face is not clearly visible, lower the confidence accordingly. Do not make medical claims.`;
 }
 
@@ -119,7 +121,9 @@ ${MIN_RECS}~${MAX_RECS}개를 선택하여 다음 JSON 형식으로 응답하세
     "tips": ["스타일링/유지보수 팁1 (120자 이하)", "팁2", ...]
   },
   ...
-]`;
+]
+
+각 추천의 reason은 서로 겹치지 않아야 합니다. 스타일마다 이 얼굴형·선호도와 연결된 구체적인 근거를 제시하고, 같은 문장을 반복하지 마세요.`;
   }
 
   return `You are a hairstyle recommendation expert. Choose ONLY from the provided candidate list.
@@ -143,7 +147,9 @@ Select ${MIN_RECS}–${MAX_RECS} and respond in this JSON format. Use ONLY ids f
     "tips": ["Styling/maintenance tip 1 (max 120 chars)", "Tip 2", ...]
   },
   ...
-]`;
+]
+
+Each recommendation's reason must be distinct: tie it to this specific face shape and preferences, and never repeat the same sentence across recommendations.`;
 }
 
 /**
