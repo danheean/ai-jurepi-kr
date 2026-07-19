@@ -18,7 +18,10 @@ export interface StructuredModel {
    *
    * @param req.prompt Text prompt (vision providers prepend it after images)
    * @param req.image Optional: { data: base64, mimeType: 'image/png'|'image/jpeg'|'image/webp' }
-   * @param req.schema Zod schema for validation
+   * @param req.schema Zod schema for validation (defense-in-depth, applied after the response returns)
+   * @param req.responseSchema Optional Gemini-native JSON schema (OpenAPI subset) enforced server-side by the
+   *   model itself via `generationConfig.responseSchema`. When omitted, only loose `responseMimeType: 'application/json'`
+   *   JSON-mode is used. `schema` validation still runs either way as a second layer.
    * @param req.maxRetries Max retry attempts on JSON extraction failure (default: 1)
    * @returns Validated output matching the schema
    * @throws AiError if schema validation fails or API error
@@ -27,6 +30,7 @@ export interface StructuredModel {
     prompt: string;
     image?: { data: string; mimeType: 'image/png' | 'image/jpeg' | 'image/webp' };
     schema: T;
+    responseSchema?: object;
     maxRetries?: number;
   }): Promise<z.infer<T>>;
 }

@@ -214,7 +214,7 @@ describe('flowReducer — State Machine', () => {
       ];
       const action: FlowAction = {
         type: 'RECOMMENDATIONS_READY',
-        payload: recommendations,
+        payload: { recommendations: recommendations },
       };
       const next = flowReducer(state, action);
 
@@ -308,7 +308,7 @@ describe('flowReducer — State Machine', () => {
 
       const action: FlowAction = {
         type: 'RECOMMENDATIONS_READY',
-        payload: recommendations,
+        payload: { recommendations: recommendations },
       };
       const next = flowReducer(state, action);
 
@@ -338,7 +338,7 @@ describe('flowReducer — State Machine', () => {
       ];
       const action1: FlowAction = {
         type: 'RECOMMENDATIONS_READY',
-        payload: first,
+        payload: { recommendations: first },
       };
       let next = flowReducer(state, action1);
       expect(Object.keys(next.previews)).toHaveLength(1);
@@ -372,7 +372,7 @@ describe('flowReducer — State Machine', () => {
       ];
       const action2: FlowAction = {
         type: 'RECOMMENDATIONS_READY',
-        payload: second,
+        payload: { recommendations: second },
       };
       next = flowReducer(next, action2);
 
@@ -430,7 +430,7 @@ describe('flowReducer — State Machine', () => {
       ];
       state = flowReducer(state, {
         type: 'RECOMMENDATIONS_READY',
-        payload: recs,
+        payload: { recommendations: recs },
       });
     });
 
@@ -552,7 +552,7 @@ describe('flowReducer — State Machine', () => {
       ];
       state = flowReducer(state, {
         type: 'RECOMMENDATIONS_READY',
-        payload: recs,
+        payload: { recommendations: recs },
       });
     });
 
@@ -724,7 +724,7 @@ describe('flowReducer — State Machine', () => {
 
       next = flowReducer(next, {
         type: 'RECOMMENDATIONS_READY',
-        payload: [
+        payload: { recommendations: [
           {
             hairstyleId: 's1',
             name: { ko: 'n', en: 'n' },
@@ -733,7 +733,7 @@ describe('flowReducer — State Machine', () => {
             referenceImage: { src: '/img.webp', alt: 'a', credit: 'c' },
             tags: [],
           },
-        ],
+        ] },
       });
       expect(next.photo).toEqual(originalPhoto);
     });
@@ -759,7 +759,7 @@ describe('flowReducer — State Machine', () => {
       ];
       const next = flowReducer(state, {
         type: 'RECOMMENDATIONS_READY',
-        payload: recs,
+        payload: { recommendations: recs },
       });
 
       // Queue should contain ids present in previews
@@ -847,7 +847,7 @@ describe('flowReducer — State Machine', () => {
       ];
       state = flowReducer(state, {
         type: 'RECOMMENDATIONS_READY',
-        payload: recs,
+        payload: { recommendations: recs },
       });
     });
 
@@ -950,7 +950,7 @@ describe('flowReducer — State Machine', () => {
 
       state = flowReducer(state, {
         type: 'RECOMMENDATIONS_READY',
-        payload: manyRecs,
+        payload: { recommendations: manyRecs },
       });
 
       expect(state.previewQueue).toHaveLength(6);

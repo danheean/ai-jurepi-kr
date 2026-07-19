@@ -193,6 +193,53 @@ describe('GeminiClient', () => {
       ).rejects.toThrow(AiError);
     });
 
+    it('forwards responseSchema to generationConfig when provided', async () => {
+      const responseJson = { value: 'test', count: 42 };
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify(responseJson),
+        },
+      });
+
+      const responseSchema = {
+        type: 'object',
+        properties: {
+          value: { type: 'string' },
+          count: { type: 'number' },
+        },
+        required: ['value', 'count'],
+      };
+
+      const client = new GeminiClient('test-key');
+      await client.generateJson({
+        prompt: 'test prompt',
+        schema: testSchema,
+        responseSchema,
+      });
+
+      const callArgs = mockGenerateContent.mock.calls[0][0];
+      expect(callArgs.generationConfig.responseSchema).toEqual(responseSchema);
+      expect(callArgs.generationConfig.responseMimeType).toBe('application/json');
+    });
+
+    it('omits responseSchema from generationConfig when not provided', async () => {
+      const responseJson = { value: 'test', count: 42 };
+      mockGenerateContent.mockResolvedValueOnce({
+        response: {
+          text: () => JSON.stringify(responseJson),
+        },
+      });
+
+      const client = new GeminiClient('test-key');
+      await client.generateJson({
+        prompt: 'test prompt',
+        schema: testSchema,
+      });
+
+      const callArgs = mockGenerateContent.mock.calls[0][0];
+      expect(callArgs.generationConfig.responseSchema).toBeUndefined();
+    });
+
     it('passes through gender field from provider response', async () => {
       const genderSchema = z.object({
         gender: z.enum(['male', 'female', 'unknown']).catch('unknown'),

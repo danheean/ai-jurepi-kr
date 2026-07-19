@@ -7,6 +7,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type {
   Recommendation,
   RecommendInput,
+  Curation,
 } from '@/lib/hairstyle-recommendation';
 import { FACE_SHAPES } from '@/lib/hairstyle-recommendation';
 import {
@@ -25,6 +26,8 @@ import RecommendationGrid from './RecommendationGrid';
 import ResultActions from './ResultActions';
 import MyPhotoPanel from './MyPhotoPanel';
 import MobilePhotoChip from './MobilePhotoChip';
+import FaceShapeReferencePanel from './FaceShapeReferencePanel';
+import CurationPanel from './CurationPanel';
 
 interface AnalyzingPlaceholder {
   id: string;
@@ -173,7 +176,11 @@ export default function HairstyleTool() {
       }
 
       const recommendations = envelope.data.recommendations as Recommendation[];
-      dispatch({ type: 'RECOMMENDATIONS_READY', payload: recommendations });
+      const curation = envelope.data.curation as Curation | undefined;
+      dispatch({
+        type: 'RECOMMENDATIONS_READY',
+        payload: { recommendations, curation },
+      });
     } catch (err: any) {
       const code = err.code || 'INTERNAL';
       const message = err.message || t('error.generic');
@@ -416,6 +423,14 @@ export default function HairstyleTool() {
           </div>
         )}
 
+        {/* Face Shape Reference Panel — manual pick, no photo uploaded */}
+        {!state.photo && state.faceShape && (
+          <FaceShapeReferencePanel
+            shape={state.faceShape}
+            onEdit={() => dispatch({ type: 'SWITCH_PATH', payload: 'manual' })}
+          />
+        )}
+
         {/* Analysis Card (with skeleton during analyzing) */}
         {(state.analysis || state.stage === 'analyzing') && (
           <>
@@ -502,9 +517,11 @@ export default function HairstyleTool() {
             <p className="sr-only" role="status">
               {t('result.readyAnnounce', { count: state.recommendations.length })}
             </p>
+            {state.curation && <CurationPanel curation={state.curation} />}
             <RecommendationGrid
               recommendations={state.recommendations}
               previews={state.previews}
+              reducedMotion={prefersReducedMotion}
             />
             <ResultActions
               onRegenerate={handleRegenerate}

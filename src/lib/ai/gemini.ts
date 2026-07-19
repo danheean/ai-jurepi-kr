@@ -35,6 +35,7 @@ export class GeminiClient implements StructuredModel {
     prompt: string;
     image?: { data: string; mimeType: 'image/png' | 'image/jpeg' | 'image/webp' };
     schema: T;
+    responseSchema?: object;
     maxRetries?: number;
   }): Promise<z.infer<T>> {
     const maxRetries = req.maxRetries ?? 1;
@@ -70,6 +71,7 @@ export class GeminiClient implements StructuredModel {
           generationConfig: {
             temperature: 0.3,
             responseMimeType: 'application/json',
+            ...(req.responseSchema ? { responseSchema: req.responseSchema } : {}),
           },
         });
 

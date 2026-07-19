@@ -103,6 +103,28 @@ export interface ProviderRecommendation {
 }
 
 /**
+ * Curation: optional overall summary + "styles to avoid" (rev 3).
+ * Authored by the same recommend() call as the recommendations — no second
+ * AI request. Entirely optional: a missing/malformed block must never block
+ * the core recommendations from returning (see coerceCuration in schema.ts).
+ */
+export interface Curation {
+  summary: string; // AI: why these picks fit overall, ≤400 chars, localized
+  avoid: {
+    label: string; // AI: free-text style family to avoid (NOT a catalog id), ≤60 chars
+    reason: string; // AI: why, ≤160 chars, localized
+  }[]; // max 3 items
+}
+
+/**
+ * Result of HairstyleAI.recommend(): the picks plus an optional curation block.
+ */
+export interface RecommendResult {
+  recommendations: ProviderRecommendation[];
+  curation?: Curation;
+}
+
+/**
  * ============================================================================
  * DOMAIN PORT: HairstyleAI
  * ============================================================================
@@ -133,7 +155,10 @@ export interface HairstyleAI {
    *
    * @param input User preferences (faceShape, attributes, locale)
    * @param candidates Filtered hairstyle library entries to choose from
-   * @returns Array of provider recommendations (id, reason, tips only)
+   * @returns { recommendations, curation? } — picks (id, reason, tips only) plus
+   *   an optional overall summary + "styles to avoid" (rev 3), authored in the
+   *   same call. `curation` is best-effort: a missing/malformed block must
+   *   never fail this call.
    *
    * Note: The provider MUST only return hairstyleIds from the candidate set.
    * The server validates this and attaches catalog data (name, image, tags)
@@ -142,5 +167,5 @@ export interface HairstyleAI {
   recommend(
     input: RecommendInput,
     candidates: HairstyleLibraryEntry[]
-  ): Promise<ProviderRecommendation[]>;
+  ): Promise<RecommendResult>;
 }

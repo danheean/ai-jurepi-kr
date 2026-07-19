@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt, buildFaceEditPrompt } from './prompt';
+import { buildAnalyzePrompt, buildRecommendPrompt, buildStylePreviewPrompt, buildFaceEditPrompt, buildFaceShapeReferencePrompt } from './prompt';
 import { matchCandidates, HAIRSTYLE_LIBRARY } from './catalog';
-import { MIN_RECS, MAX_RECS } from './constants';
+import { MIN_RECS, MAX_RECS, FACE_SHAPES } from './constants';
 
 describe('buildAnalyzePrompt', () => {
   it('returns English prompt for en locale', () => {
@@ -299,6 +299,36 @@ describe('buildRecommendPrompt', () => {
     expect(buildRecommendPrompt(input, candidates, 'ko')).toContain('겹치지');
     expect(buildRecommendPrompt(input, candidates, 'en')).toContain('distinct');
   });
+
+  it('instructs the model to include an optional curation block with a summary and avoid list', () => {
+    const input = {
+      faceShape: 'oval' as const,
+      preference: 'neutral' as const,
+      occasion: 'daily' as const,
+      locale: 'en' as const,
+    };
+    const candidates = matchCandidates({ faceShape: 'oval' });
+    const prompt = buildRecommendPrompt(input, candidates, 'en');
+
+    expect(prompt).toContain('curation');
+    expect(prompt).toContain('summary');
+    expect(prompt).toContain('avoid');
+    expect(prompt.toLowerCase()).toContain('optional');
+  });
+
+  it('instructs the Korean model to include an optional curation block', () => {
+    const input = {
+      faceShape: 'round' as const,
+      preference: 'neutral' as const,
+      occasion: 'daily' as const,
+      locale: 'ko' as const,
+    };
+    const candidates = matchCandidates({ faceShape: 'round' });
+    const prompt = buildRecommendPrompt(input, candidates, 'ko');
+
+    expect(prompt).toContain('curation');
+    expect(prompt).toContain('선택 사항');
+  });
 });
 
 describe('buildStylePreviewPrompt', () => {
@@ -540,5 +570,38 @@ describe('buildFaceEditPrompt', () => {
     expect(prompt).not.toContain('${');
     expect(prompt).not.toContain('{');
     expect(prompt).not.toContain('[object Object]');
+  });
+});
+
+describe('buildFaceShapeReferencePrompt', () => {
+  it('produces a distinct, non-empty prompt for every face shape', () => {
+    const prompts = FACE_SHAPES.map((shape) => buildFaceShapeReferencePrompt(shape));
+    expect(new Set(prompts).size).toBe(FACE_SHAPES.length);
+    prompts.forEach((p) => expect(p.length).toBeGreaterThan(20));
+  });
+
+  it('mentions the target face shape', () => {
+    const prompt = buildFaceShapeReferencePrompt('diamond');
+    expect(prompt).toContain('diamond');
+  });
+
+  it('does not reference a specific hairstyle (hair pulled back/short instead)', () => {
+    const prompt = buildFaceShapeReferencePrompt('oval');
+    expect(prompt.toLowerCase()).toContain('pulled back');
+  });
+
+  it('is deterministic: same shape produces the same prompt', () => {
+    expect(buildFaceShapeReferencePrompt('round')).toBe(buildFaceShapeReferencePrompt('round'));
+  });
+
+  it('does not contain template placeholders or unresolved variables', () => {
+    const prompt = buildFaceShapeReferencePrompt('square');
+    expect(prompt).not.toContain('${');
+    expect(prompt).not.toContain('[object Object]');
+  });
+
+  it('is locale-agnostic (no Korean characters)', () => {
+    const prompt = buildFaceShapeReferencePrompt('heart');
+    expect(prompt).not.toMatch(/[가-힣]/);
   });
 });

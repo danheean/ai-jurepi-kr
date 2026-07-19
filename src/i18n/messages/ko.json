@@ -150,7 +150,11 @@
         "copyFailed": "복사에 실패했습니다. 다시 시도해주세요.",
         "share": "공유하기",
         "reset": "처음부터",
-        "empty": "추천할 스타일이 없습니다"
+        "empty": "추천할 스타일이 없습니다",
+        "curation": {
+          "title": "이렇게 추천했어요",
+          "avoidTitle": "피하는 편이 좋은 스타일"
+        }
       },
       "error": {
         "validation": "요청이 올바르지 않습니다. 다시 시도해주세요.",
@@ -175,7 +179,8 @@
         "photoEmptyHint": "사진을 업로드하면 여기에 계속 표시돼요",
         "readyHint": "옵션을 고르고 '추천 받기'를 누르면 여기에 결과가 나와요",
         "facePreviewLabel": "내 얼굴로 미리보기",
-        "facePreviewNote": "사진은 미리보기 생성에만 쓰이고 즉시 삭제됩니다"
+        "facePreviewNote": "사진은 미리보기 생성에만 쓰이고 즉시 삭제됩니다",
+        "changeFaceShape": "얼굴형 다시 선택"
       },
       "preview": {
         "generating": "AI 미리보기 생성 중…",

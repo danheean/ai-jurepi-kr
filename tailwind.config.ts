@@ -109,9 +109,14 @@ const config: Config = {
           '50%': { transform: 'scale(0.95)' },
           '75%': { transform: 'scale(1.15)' },
         },
+        'card-reveal': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'heart-beat': 'heart-beat 500ms var(--ease-out, ease-out)',
+        'card-reveal': 'card-reveal 200ms var(--ease-out, ease-out) both',
       },
       fontSize: {
         'display-xl': [

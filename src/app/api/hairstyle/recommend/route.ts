@@ -85,12 +85,12 @@ export async function POST(request: NextRequest) {
     // 6. Call provider to recommend
     const provider = getProvider();
     let providerRecommendations;
+    let curation;
 
     try {
-      providerRecommendations = await provider.recommend(
-        recommendInput,
-        candidates
-      );
+      const result = await provider.recommend(recommendInput, candidates);
+      providerRecommendations = result.recommendations;
+      curation = result.curation;
     } catch (err) {
       // Generic provider failure
       return NextResponse.json(
@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
     // 8. Backfill if needed (guarantee ≥ 3 recommendations)
     const final: Recommendation[] = backfill(enriched, candidates, recommendInput.locale);
 
-    // 9. Return success
+    // 9. Return success (curation is optional — omitted entirely when absent)
     return NextResponse.json(
-      success({ recommendations: final }),
+      success({ recommendations: final, ...(curation ? { curation } : {}) }),
       { status: 200 }
     );
   } catch (err) {

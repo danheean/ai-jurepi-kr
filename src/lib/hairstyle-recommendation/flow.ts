@@ -17,6 +17,7 @@
 import type {
   FaceAnalysis,
   Recommendation,
+  Curation,
 } from './types';
 import type {
   FaceShape,
@@ -80,6 +81,7 @@ export interface FlowState {
     occasion: Occasion;
   };
   recommendations: Recommendation[]; // Final recommendations returned to user
+  curation: Curation | null; // Rev 3: optional overall summary + "styles to avoid" (null when absent)
   previews: Record<string, PreviewState>; // hairstyleId → preview status
   previewQueue: string[]; // Queue of hairstyleIds pending preview generation
   generatingCount: number; // Current concurrent generation tasks (0..PREVIEW_CONCURRENCY)
@@ -109,7 +111,10 @@ export type FlowAction =
     }
   | { type: 'SWITCH_PATH'; payload: 'photo' | 'manual' }
   | { type: 'START_RECOMMENDING' }
-  | { type: 'RECOMMENDATIONS_READY'; payload: Recommendation[] }
+  | {
+      type: 'RECOMMENDATIONS_READY';
+      payload: { recommendations: Recommendation[]; curation?: Curation };
+    }
   | {
       type: 'PREVIEW_STARTED';
       payload: string; // hairstyleId
@@ -147,6 +152,7 @@ export const initialFlowState: FlowState = {
   facePreviewEnabled: true,
   preferences: { preference: 'neutral', occasion: 'daily' },
   recommendations: [],
+  curation: null,
   previews: {},
   previewQueue: [],
   generatingCount: 0,
@@ -260,7 +266,7 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
       const previews: Record<string, PreviewState> = {};
       const queue: string[] = [];
 
-      for (const rec of action.payload) {
+      for (const rec of action.payload.recommendations) {
         previews[rec.hairstyleId] = { status: 'idle' };
         queue.push(rec.hairstyleId);
       }
@@ -268,7 +274,8 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
       return {
         ...state,
         preferences: { ...state.preferences },
-        recommendations: action.payload,
+        recommendations: action.payload.recommendations,
+        curation: action.payload.curation ?? null,
         stage: 'results',
         previews,
         previewQueue: queue,

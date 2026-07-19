@@ -150,7 +150,11 @@
         "copyFailed": "Copy failed. Please try again.",
         "share": "Share",
         "reset": "Start over",
-        "empty": "No matches found"
+        "empty": "No matches found",
+        "curation": {
+          "title": "Why these picks",
+          "avoidTitle": "Styles to avoid"
+        }
       },
       "error": {
         "validation": "Something looks off with the request. Please try again.",
@@ -175,7 +179,8 @@
         "photoEmptyHint": "Your photo stays visible here after upload",
         "readyHint": "Pick your options and press Get recommendations — results appear here",
         "facePreviewLabel": "Preview on my face",
-        "facePreviewNote": "Your photo is used only to render previews and immediately discarded"
+        "facePreviewNote": "Your photo is used only to render previews and immediately discarded",
+        "changeFaceShape": "Change face shape"
       },
       "preview": {
         "generating": "Generating AI preview…",

@@ -58,6 +58,7 @@ describe('GeminiProvider', () => {
           image: expect.objectContaining({
             data: 'base64imagedata',
           }),
+          responseSchema: expect.objectContaining({ type: 'object' }),
           maxRetries: 1,
         })
       );
@@ -169,8 +170,8 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
-      expect(result).toHaveLength(2);
-      expect(result[0].hairstyleId).toBe('bob-classic');
+      expect(result.recommendations).toHaveLength(2);
+      expect(result.recommendations[0].hairstyleId).toBe('bob-classic');
     });
 
     it('handles single recommendation response and wraps it', async () => {
@@ -184,8 +185,8 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].hairstyleId).toBe('bob-classic');
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].hairstyleId).toBe('bob-classic');
       expect(mockGenerateJson).toHaveBeenCalledTimes(1);
     });
 
@@ -203,8 +204,8 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].hairstyleId).toBe('bob-classic');
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].hairstyleId).toBe('bob-classic');
     });
 
     it('filters out hallucinated hairstyleIds', async () => {
@@ -231,8 +232,8 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
-      expect(result).toHaveLength(2);
-      expect(result.map((r) => r.hairstyleId)).toEqual([
+      expect(result.recommendations).toHaveLength(2);
+      expect(result.recommendations.map((r) => r.hairstyleId)).toEqual([
         'bob-classic',
         'layered-long',
       ]);
@@ -252,8 +253,8 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].tips).toHaveLength(3);
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].tips).toHaveLength(3);
     });
 
     it('clamps an over-length reason instead of failing the request', async () => {
@@ -270,8 +271,8 @@ describe('GeminiProvider', () => {
       const provider = new GeminiProvider();
       const result = await provider.recommend(input, candidates);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].reason).toHaveLength(280);
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].reason).toHaveLength(280);
     });
 
     it('skips invalid recommendations silently', async () => {
@@ -295,8 +296,55 @@ describe('GeminiProvider', () => {
       const result = await provider.recommend(input, candidates);
 
       // Only valid one is returned
-      expect(result).toHaveLength(1);
-      expect(result[0].hairstyleId).toBe('bob-classic');
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].hairstyleId).toBe('bob-classic');
+    });
+
+    it('returns an optional curation block when the model includes one', async () => {
+      mockGenerateJson.mockResolvedValueOnce({
+        recommendations: [
+          { hairstyleId: 'bob-classic', reason: 'Classic bob.', tips: ['Tip 1'] },
+        ],
+        curation: {
+          summary: 'These bob-length styles play up your jawline.',
+          avoid: [{ label: 'Very long layers', reason: 'Can wash out an oval face.' }],
+        },
+      });
+
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
+
+      expect(result.curation).toEqual({
+        summary: 'These bob-length styles play up your jawline.',
+        avoid: [{ label: 'Very long layers', reason: 'Can wash out an oval face.' }],
+      });
+    });
+
+    it('returns undefined curation when the model omits it', async () => {
+      mockGenerateJson.mockResolvedValueOnce([
+        { hairstyleId: 'bob-classic', reason: 'Classic bob.', tips: ['Tip 1'] },
+      ]);
+
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
+
+      expect(result.curation).toBeUndefined();
+      expect(result.recommendations).toHaveLength(1);
+    });
+
+    it('returns undefined curation (not an error) when curation is malformed', async () => {
+      mockGenerateJson.mockResolvedValueOnce({
+        recommendations: [
+          { hairstyleId: 'bob-classic', reason: 'Classic bob.', tips: ['Tip 1'] },
+        ],
+        curation: { summary: 123, avoid: 'not-an-array' },
+      });
+
+      const provider = new GeminiProvider();
+      const result = await provider.recommend(input, candidates);
+
+      expect(result.curation).toBeUndefined();
+      expect(result.recommendations).toHaveLength(1);
     });
   });
 });

@@ -15,6 +15,8 @@ import {
   parseAnalyzeRequest,
   parseRecommendRequest,
   validateProviderRecommendations,
+  CurationSchema,
+  coerceCuration,
 } from './schema';
 
 describe('FaceAnalysisSchema', () => {
@@ -456,5 +458,98 @@ describe('PreviewRequestSchema', () => {
       locale: 'en',
     };
     expect(PreviewRequestSchema.parse(valid)).toEqual(valid);
+  });
+});
+
+describe('CurationSchema', () => {
+  it('accepts a valid curation block', () => {
+    const valid = {
+      summary: 'These styles play up your jawline and volume.',
+      avoid: [{ label: 'Blunt bangs', reason: 'Can shorten the face visually.' }],
+    };
+    expect(CurationSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('accepts an empty avoid array', () => {
+    const valid = { summary: 'Overall these suit you.', avoid: [] };
+    expect(CurationSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('rejects more than 3 avoid items', () => {
+    const invalid = {
+      summary: 'ok',
+      avoid: Array.from({ length: 4 }, (_, i) => ({
+        label: `label-${i}`,
+        reason: `reason-${i}`,
+      })),
+    };
+    expect(() => CurationSchema.parse(invalid)).toThrow();
+  });
+
+  it('rejects a summary over 400 chars', () => {
+    expect(() =>
+      CurationSchema.parse({ summary: 'A'.repeat(401), avoid: [] })
+    ).toThrow();
+  });
+});
+
+describe('coerceCuration', () => {
+  it('extracts and validates a curation block from a raw provider payload', () => {
+    const raw = {
+      recommendations: [],
+      curation: {
+        summary: 'Great overall fit for your face shape.',
+        avoid: [{ label: 'Center part buzzcuts', reason: 'Too severe for this shape.' }],
+      },
+    };
+    const result = coerceCuration(raw);
+    expect(result).toEqual(raw.curation);
+  });
+
+  it('returns undefined when curation is missing', () => {
+    expect(coerceCuration({ recommendations: [] })).toBeUndefined();
+  });
+
+  it('returns undefined for a non-object raw payload', () => {
+    expect(coerceCuration(null)).toBeUndefined();
+    expect(coerceCuration('not an object')).toBeUndefined();
+    expect(coerceCuration([])).toBeUndefined();
+  });
+
+  it('returns undefined instead of throwing when curation is malformed', () => {
+    const raw = { curation: { summary: 123, avoid: 'not-an-array' } };
+    expect(coerceCuration(raw)).toBeUndefined();
+  });
+
+  it('clamps an over-length summary instead of dropping it', () => {
+    const raw = { curation: { summary: 'A'.repeat(500), avoid: [] } };
+    const result = coerceCuration(raw);
+    expect(result?.summary).toHaveLength(400);
+  });
+
+  it('clamps avoid to max 3 items instead of dropping the block', () => {
+    const raw = {
+      curation: {
+        summary: 'ok',
+        avoid: Array.from({ length: 5 }, (_, i) => ({
+          label: `label-${i}`,
+          reason: `reason-${i}`,
+        })),
+      },
+    };
+    const result = coerceCuration(raw);
+    expect(result?.avoid).toHaveLength(3);
+  });
+
+  it('clamps an over-length avoid label/reason instead of dropping the item', () => {
+    const raw = {
+      curation: {
+        summary: 'ok',
+        avoid: [{ label: 'L'.repeat(100), reason: 'R'.repeat(200) }],
+      },
+    };
+    const result = coerceCuration(raw);
+    expect(result?.avoid[0].label).toHaveLength(60);
+    expect(result?.avoid[0].reason).toHaveLength(160);
   });
 });

@@ -1,6 +1,6 @@
 # Hairstyle Recommendation — AI Face-Shape Style Advisor — Service SPEC
 
-> This document is the **canonical (English) source** consumed by AI coding agents. The Korean translation lives in [`SPEC_KR.md`](SPEC_KR.md); keep both in sync when either changes. **Synchronized to ai.jurepi.kr DESIGN.md (2026-07-18): brand-red primary + 6-category accents (beauty = rose), Gmarket Sans display + Pretendard body, 16/32/pill radius. Updated 2026-07-18: wide tool-page shell, always-visible photo panel, AI style-preview image generation (platform `src/lib/ai` capability layer; dev = Ollama). Updated 2026-07-18 (rev 2): gender-aware recommendations (analyze detects perceived gender; auto-applied with manual override), face-preserving style previews (user photo + hair-only edit via an edit-capable image provider, opt-out toggle default ON), workspace RAIL moved to the LEFT, locale-correct backfill text, +10 masculine catalog entries with per-entry `genders` tags, `evals/` prompt-evaluation harness (uv + LangChain + Ollama).**
+> This document is the **canonical (English) source** consumed by AI coding agents. The Korean translation lives in [`SPEC_KR.md`](SPEC_KR.md); keep both in sync when either changes. **Synchronized to ai.jurepi.kr DESIGN.md (2026-07-18): brand-red primary + 6-category accents (beauty = rose), Gmarket Sans display + Pretendard body, 16/32/pill radius. Updated 2026-07-18: wide tool-page shell, always-visible photo panel, AI style-preview image generation (platform `src/lib/ai` capability layer; dev = Ollama). Updated 2026-07-18 (rev 2): gender-aware recommendations (analyze detects perceived gender; auto-applied with manual override), face-preserving style previews (user photo + hair-only edit via an edit-capable image provider, opt-out toggle default ON), workspace RAIL moved to the LEFT, locale-correct backfill text, +10 masculine catalog entries with per-entry `genders` tags, `evals/` prompt-evaluation harness (uv + LangChain + Ollama). Updated 2026-07-19 (rev 3): manual face-shape pick now shows an AI-generated reference image in the RAIL (was empty for the no-photo path); `analyzeFace()` now passes Gemini's native `generationConfig.responseSchema` (the earlier `<third_party_integrations>` note describing `responseSchema` was aspirational until rev 3 — only `responseMimeType: application/json` was actually wired; zod validation remains as a defense-in-depth layer); `recommend()` now also returns an optional **Curation** block (overall summary + AI-authored "styles to avoid" reasons, same single call, no extra latency) rendered above the recommendation grid; results reveal is a **staggered card entrance** (curation panel first, then cards fade in ~80ms apart, `prefers-reduced-motion` → instant) — purely client-side sequencing of the already-fetched response, NOT network streaming.**
 >
 > Build specification for **Hairstyle Recommendation** (헤어스타일 추천) — the **first AI tool** on the new **ai.jurepi.kr** hub (an AI-powered sibling of the existing no-AI [apps.jurepi.kr](https://apps.jurepi.kr)). The user either **uploads a face photo** (analyzed by an AI vision model) or **picks their face shape manually**, refines a few attributes (preference, hair length, hair type, occasion), and receives **3–6 recommended hairstyles** — each with a "why it suits you" explanation, styling/maintenance tips, and a **curated reference image**. The analysis also detects **perceived gender presentation** (male/female/unknown); the detected gender is **auto-applied** so a male photo yields masculine-appropriate styles, with a **manual gender override** always available. The AI returns **structured text**; every card shows a curated reference image immediately, and — when an image provider is enabled — an **AI-generated style preview** progressively replaces it: **face-preserving** (the user's own photo with ONLY the hair changed; opt-out toggle, default ON) when a photo exists and the provider supports image editing, otherwise a generic model portrait matching the detected gender. **Nothing is ever stored or logged** — the photo and all previews are ephemeral.
 >
@@ -174,39 +174,46 @@ src/
 │   ├── PhotoDropzone.tsx               # picker + drag-drop + camera; client resize; privacy notice; emits objectUrl
 │   ├── MyPhotoPanel.tsx                # persistent "My photo" rail card: preview + replace/remove + ephemeral note
 │   ├── FaceShapePicker.tsx             # labeled face-shape illustrations (no-photo path)
+│   ├── FaceShapeReferencePanel.tsx     # rev 3: RAIL card shown when !photo && faceShape — AI reference image + label, mutually exclusive with MyPhotoPanel
 │   ├── AttributeSelectors.tsx          # preference / length / type / occasion pills
 │   ├── AnalysisCard.tsx                # face shape + confidence meter + features
-│   ├── RecommendationGrid.tsx          # 3–6 RecommendationCard
+│   ├── CurationPanel.tsx               # rev 3: summary + "styles to avoid" — rendered above RecommendationGrid, only when curation is present
+│   ├── RecommendationGrid.tsx          # 3–6 RecommendationCard, staggered fade-in entrance (rev 3)
 │   ├── RecommendationCard.tsx          # name + reason + tips + PreviewImage
 │   ├── PreviewImage.tsx                # 4:5 box: curated image → shimmer (aria-busy) → generated preview fade-in / quiet fallback
 │   └── ResultActions.tsx               # regenerate / copy-summary / share / reset
 ├── lib/ai/                             # PLATFORM capability layer (platform SPEC): StructuredModel/ImageGenerator ports, GeminiClient, OllamaClient, guardrails, env, factory
+│   └── schema-converters.ts            # rev 3: hand-written Gemini responseSchema objects (FACE_ANALYSIS_GEMINI_SCHEMA, RECOMMEND_GEMINI_SCHEMA) — no new runtime dependency
 ├── lib/hairstyle-recommendation/
-│   ├── flow.ts                         # pure reducer: stage machine + photo persistence + preview queue + gender/face-preview state (no react/SDK imports)
+│   ├── flow.ts                         # pure reducer: stage machine + photo persistence + preview queue + gender/face-preview state + curation (rev 3, no react/SDK imports)
 │   ├── flow.test.ts
-│   ├── schema.ts                       # zod: AnalyzeRequest, RecommendRequest, PreviewRequest (+image/gender), FaceAnalysis (+gender), Recommendation, ApiEnvelope
+│   ├── schema.ts                       # zod: AnalyzeRequest, RecommendRequest, PreviewRequest (+image/gender), FaceAnalysis (+gender), Recommendation, Curation (rev 3), ApiEnvelope
 │   ├── constants.ts                    # enums (+GENDERS), MAX_IMAGE_BYTES, MAX_EDGE_PX, JPEG_QUALITY, rate limits
 │   ├── locale-templates.ts             # ko/en backfill reason/tips templates (rev 2 — no hardcoded-English fallbacks)
 │   ├── catalog.ts                      # curated HairstyleLibraryEntry[] (+genders tags) + match(faceShape, attrs incl. gender) → candidate IDs
 │   ├── catalog.test.ts
+│   ├── face-shapes-catalog.ts          # rev 3: FaceShapeReference[] (shape → /face-shapes/<shape>.webp + alt), analogous to the hairstyle catalog's image references
 │   ├── resize.ts                       # client canvas downscale helper
 │   ├── resize.test.ts
-│   ├── prompt.ts                        # buildAnalyzePrompt / buildRecommendPrompt (structured-JSON contract)
+│   ├── prompt.ts                        # buildAnalyzePrompt / buildRecommendPrompt (+curation instructions, rev 3) / buildFaceShapeReferencePrompt (rev 3, offline asset generation only)
 │   ├── rate-limit.ts                   # per-IP token bucket (KV or in-memory)
 │   ├── ai/
-│   │   ├── types.ts                    # HairstyleAI interface + provider-facing types
-│   │   ├── gemini.ts                   # GeminiProvider — thin adapter over platform GeminiClient
+│   │   ├── types.ts                    # HairstyleAI interface + provider-facing types (recommend() returns { recommendations, curation? } as of rev 3)
+│   │   ├── gemini.ts                   # GeminiProvider — thin adapter over platform GeminiClient; passes responseSchema (rev 3)
 │   │   ├── ollama.ts                   # OllamaHairstyleProvider — thin adapter over platform OllamaClient
 │   │   ├── index.ts                    # getProvider() factory (AI_PROVIDER: gemini | ollama)
 │   │   └── gemini.test.ts              # provider mapping/guardrail tests (mocked SDK)
 │   └── index.ts                        # barrel
-├── i18n/messages/{ko,en}.json          # tools.hairstyle-recommendation.* namespace
+├── i18n/messages/{ko,en}.json          # tools.hairstyle-recommendation.* namespace (+result.curation.* keys, rev 3)
 └── tools/registry.ts                   # +1 ToolMeta entry (id hairstyle-recommendation)
 public/hairstyles/                      # curated reference images (webp/avif, credited)
 └── <hairstyleId>/<preference>.webp
+public/face-shapes/                     # rev 3: 7 AI-generated face-shape reference images (offline-generated, committed)
+└── <shape>.webp
 scripts/
 ├── export-prompts.ts                   # dumps production prompt builders → evals/hairstyle/prompts.generated.json (single source)
-└── generate-hairstyle-refs.ts          # batch-generates missing catalog reference images via the ImageGenerator port (manual review before commit)
+├── generate-hairstyle-refs.ts          # batch-generates missing catalog reference images via the ImageGenerator port (manual review before commit)
+└── generate-face-shape-refs.ts         # rev 3: same pattern, generates the 7 face-shape reference images to public/face-shapes/ (manual, one-time run, resume-safe)
 evals/                                  # Python prompt-eval harness (uv + LangChain + Ollama) — see evals/README.md
 └── hairstyle/{run.py, schemas.py, fixtures.json, prompts.generated.json}
 wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bindings
@@ -237,6 +244,16 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     - referenceImage: object { src: string (e.g. /hairstyles/soft-layered-bob/feminine.webp), alt: string, credit: string }
     - tags: string[] (from catalog: e.g. ["volume", "low-maintenance"])
   </Recommendation>
+  <Curation>  <!-- rev 3: optional, same recommend() call, no extra AI request -->
+    - summary: string (AI: why these picks fit this face shape + attributes overall, ≤ 400 chars, localized)
+    - avoid: array of { label: string (≤ 60 chars, free text — NOT a catalog id, e.g. "very short buzzcut styles"), reason: string (≤ 160 chars, localized) } — max 3 items
+    - The whole block is OPTIONAL end-to-end: if the model omits or malforms it, `coerceCuration()` returns `undefined` (never throws) and the UI hides the curation panel — a missing curation block must never fail or degrade the core recommendation flow.
+  </Curation>
+  <FaceShapeReference>  <!-- rev 3: static asset + metadata, no AI call at request time (images pre-generated offline) -->
+    - shape: enum (oval, round, square, heart, oblong, diamond, triangle)
+    - image: object { src: string (e.g. /face-shapes/oval.webp), alt: string } — pre-generated via scripts/generate-face-shape-refs.ts, committed to public/face-shapes/
+    - label: localized via the existing `face.<shape>` i18n keys (no new translation keys needed)
+  </FaceShapeReference>
   <HairstyleLibraryEntry>  <!-- curated static catalog; source of truth for imagery -->
     - id: string (kebab-case, stable, unique)
     - name: object { ko: string, en: string }
@@ -250,7 +267,7 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
   </HairstyleLibraryEntry>
   <ApiEnvelope>
     - ok: boolean
-    - data: FaceAnalysis | { recommendations: Recommendation[] } | { image: string, mimeType: string } | null
+    - data: FaceAnalysis | { recommendations: Recommendation[]; curation?: Curation } | { image: string, mimeType: string } | null
     - error: object { code: enum (see error codes), message: string } | null
   </ApiEnvelope>
   <PreviewRequest>
@@ -303,14 +320,14 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
       Content-Type: application/json
       Body (zod RecommendRequest = RecommendInput). No image. Works standalone (no prior analyze required).
     </request>
-    <response>200 ApiEnvelope { ok: true, data: { recommendations: Recommendation[] (MIN_RECS–MAX_RECS) }, error: null }</response>
+    <response>200 ApiEnvelope { ok: true, data: { recommendations: Recommendation[] (MIN_RECS–MAX_RECS), curation?: Curation }, error: null }</response>
     <flow>
       1. Rate-limit check (IP) → 429 RATE_LIMITED.
       2. zod validate input.
       3. catalog.match(faceShape, attrs) → candidate hairstyleIds (superset). Gender hard filter first (entry.genders ∋ input.gender when set); preference relaxes to a soft filter if the gender-filtered pool < MIN_RECS.
-      4. getProvider().recommend(input, candidates) with buildRecommendPrompt — AI selects/orders MIN..MAX and writes reason + tips per pick, choosing ONLY from candidate IDs.
-      5. Validate each Recommendation (hairstyleId ∈ catalog; lengths; localized); drop invalid; ensure ≥ MIN_RECS (backfill from catalog if the model under-returns — backfill reason/tips use LOCALE TEMPLATES (ko/en), never hardcoded English).
-      6. Attach referenceImage + name + tags from catalog. Return envelope.
+      4. getProvider().recommend(input, candidates) with buildRecommendPrompt — AI selects/orders MIN..MAX and writes reason + tips per pick, choosing ONLY from candidate IDs, and (rev 3) authors an optional `curation` block (overall summary + up to 3 "styles to avoid" with reasons) in the SAME JSON response — no second AI call.
+      5. Validate each Recommendation (hairstyleId ∈ catalog; lengths; localized); drop invalid; ensure ≥ MIN_RECS (backfill from catalog if the model under-returns — backfill reason/tips use LOCALE TEMPLATES (ko/en), never hardcoded English). Validate `curation` leniently via `coerceCuration()` (rev 3) — clamp field lengths, drop the whole block silently on malformed/missing data (never blocks the recommendations from returning).
+      6. Attach referenceImage + name + tags from catalog. Return envelope with `curation` included when present.
     </flow>
     <errors>400 VALIDATION_ERROR, 429 RATE_LIMITED, 502 AI_UNAVAILABLE, 500 INTERNAL</errors>
   </endpoint>
@@ -346,8 +363,10 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
         <entry_chooser />                <!-- photo path | no-photo path -->
         <photo_dropzone />               <!-- picker/drag/camera + client resize + privacy notice -->
         <face_shape_picker />            <!-- no-photo path: labeled illustrations -->
+        <face_shape_reference_panel />   <!-- rev 3: RAIL card, !photo && faceShape — AI reference image + label; mutually exclusive with my_photo_panel -->
         <attribute_selectors />          <!-- preference / length / type / occasion pills -->
         <analysis_card />                <!-- face shape + confidence meter + features -->
+        <curation_panel />               <!-- rev 3: summary + "styles to avoid", only when curation is present; appears first in the staggered reveal -->
         <recommendation_grid>
           <recommendation_card />        <!-- ×3–6: name, reason, tips, reference image -->
         </recommendation_grid>
@@ -391,6 +410,10 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     Grid of 7 face-shape illustrations (auto-fit, min 96px, gap 12px). Each: labeled SVG silhouette in white card, radius 16px, label below (13px, text-secondary). Selected: 2px brand red border (#e60023) + surface-card fill (#f6f6f3) + check badge. Keyboard: roving tabindex, arrows move, Enter/Space select.
   </face_shape_picker>
 
+  <face_shape_reference_panel>  <!-- rev 3 -->
+    RAIL card, same shape/spacing as MyPhotoPanel (radius 16px, canvas white, 16-20px padding), rendered ONLY when `!state.photo && state.faceShape` (manual pick, no upload) — mutually exclusive with MyPhotoPanel so the RAIL is never empty. Shows the pre-generated AI reference image for the selected face shape (`/face-shapes/<shape>.webp`, explicit width/height, `loading="lazy"`, alt = localized shape label) + the shape label (reuses `face.<shape>` i18n keys) + a "change" text button that returns to FaceShapePicker. No AI call at request time — the 7 images are generated offline via `scripts/generate-face-shape-refs.ts` and committed as static assets, so this panel has zero added latency or cost.
+  </face_shape_reference_panel>
+
   <attribute_selectors>
     Five labeled rows (rev 2: Gender, Preference, Length, Hair type, Occasion). Each row: label (13px, text-secondary, 600) + a wrap of pill toggles (single-select per row). Pill: height 36px, padding 0 14px, radius full (9999px), hairline border #dadad3; default = surface-card (#f6f6f3); selected = ink background (#262622) + white text (#ffffff). Gender row (rev 2): Male / Female / Any pills — auto-selected from the analysis result (photo path, unless 'unknown'), freely overridable in both paths; an "auto-detected" hint appears when the value came from the analysis. Length/Type/Occasion optional (an "Any" pill is selectable). Preference defaults to Neutral. Changing an attribute after results are shown enables Regenerate.
   </attribute_selectors>
@@ -403,8 +426,13 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     Shown only in the photo path after analyze. White card, 20px padding, radius 16px. Left: face-shape name (Pretendard 20px/700) + a small detected-gender badge (rev 2: "남성"/"여성" chip, surface-card fill; hidden when 'unknown'). Right: confidence meter — a 6px-tall track (hairline-soft #e5e5e0) with brand red fill (#e60023), width = confidence%, plus "NN% match" (12px, text-muted). Below: features as small chips (surface-card fill, 12px, text ash #91918c). If confidence < 0.5: a gentle note "Not fully sure — you can pick your face shape manually" + a "Pick manually" text button. Entrance: fade + rise 8px, 200ms.
   </analysis_card>
 
+  <curation_panel>  <!-- rev 3 -->
+    Rendered above recommendation_grid, directly under the "Recommendation results" heading, ONLY when the response included a `curation` block (gracefully hidden otherwise — a missing curation block is never an error state). White card, radius 16px, 16-20px padding: `summary` paragraph (14px/1.55, text-charcoal) under a short localized heading (`result.curation.title`), then — if `avoid` has ≥1 item — a divider and an "styles to avoid" sub-heading (`result.curation.avoidTitle`) with up to 3 `label` + `reason` lines. Appears FIRST in the staggered reveal sequence (see recommendation_grid), immediately on render — it does not itself stagger.
+  </curation_panel>
+
   <recommendation_grid>
     Responsive grid: 1 col (<640px), 2 col (640–1023px), 3 col (≥1024px), gap 16px. Reserved min-height while loading to protect CLS. Loading: 3–6 skeleton cards (shimmer, reduced-motion → static). Empty (shouldn't happen post-backfill, but): empty_state with "No matches — try different attributes" + reset.
+    **Staggered reveal (rev 3):** on transition to the `results` stage, curation_panel (if present) renders immediately, then each RecommendationCard fades in with `animation-delay: index * 80ms` — `opacity`/`transform` only (compositor-friendly, no layout properties per the performance rules). This is purely a client-side reveal of the already-fetched response (single buffered fetch, unchanged) — NOT network/token streaming. `prefers-reduced-motion` → all cards render immediately, no delay (same pattern already used for the skeleton shimmer via the existing `prefersReducedMotion` hook in HairstyleTool.tsx).
   </recommendation_grid>
 
   <recommendation_card>
@@ -482,10 +510,10 @@ wrangler.jsonc / open-next.config.ts    # OpenNext + Workers config, KV + env bi
     <purpose>Vision face-shape analysis + text reasoning for recommendations</purpose>
     <sdk>@google/genai (JS), model gemini-2.5-flash, server-only</sdk>
     <usage>
-      - analyzeFace(image, locale): image part + buildAnalyzePrompt; responseMimeType application/json + responseSchema mirroring FaceAnalysis; parse + zod-validate.
-      - recommend(input, candidateIds, locale): text prompt listing ONLY candidate hairstyleIds; responseSchema mirroring Recommendation[] (id + reason + tips); parse + zod-validate; reject ids not in candidates.
+      - analyzeFace(image, locale): image part + buildAnalyzePrompt; `generationConfig: { responseMimeType: 'application/json', responseSchema: FACE_ANALYSIS_GEMINI_SCHEMA }` (rev 3 — responseSchema is now actually passed to the Gemini API, not just described in the prompt text; `schema-converters.ts` hand-writes the OpenAPI-subset schema object from the existing zod shape); parse + zod-validate as a defense-in-depth second layer (guardrails.ts retry/extraction unchanged).
+      - recommend(input, candidateIds, locale): text prompt listing ONLY candidate hairstyleIds, plus curation instructions (rev 3: optional overall `summary` + up to 3 `avoid` entries in the same JSON response); `responseMimeType: application/json` (loose mode retained here — the candidate-id/coercion logic already self-validates, see `<swap_note>`); parse via `coerceProviderRecommendations()` + `coerceCuration()`; reject ids not in candidates; drop a malformed `curation` block silently (never blocks recommendations).
     </usage>
-    <guardrails>Structured JSON output enforced; temperature modest (~0.6) for recommend, low for analyze; missing/invalid gender clamps to 'unknown'; server rejects any hairstyleId outside candidates; caps on string lengths; no PII retained.</guardrails>
+    <guardrails>Structured JSON output enforced (native responseSchema for analyze, rev 3); temperature modest (~0.6) for recommend, low for analyze; missing/invalid gender clamps to 'unknown'; server rejects any hairstyleId outside candidates; caps on string lengths; curation fields clamped (summary ≤400, avoid ≤3 items, reason ≤160) and the whole block is optional/droppable; no PII retained.</guardrails>
     <cost>Free-tier friendly for analysis; analyze = 1 image call, recommend = 1 text call per action. Face-preserving previews via GeminiImageClient (gemini-2.5-flash-image) bill PER IMAGE — production enablement of IMAGE_PROVIDER=gemini is an explicit deploy-time decision with the 30/min/IP rate limit as the cost guard.</cost>
   </integration>
   <integration name="Ollama (dev / open-source provider via platform OllamaClient)">

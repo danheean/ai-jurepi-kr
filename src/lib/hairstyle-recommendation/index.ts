@@ -45,6 +45,8 @@ export {
   type HairstyleLibraryEntry,
   type ProviderRecommendation,
   type HairstyleAI,
+  type Curation,
+  type RecommendResult,
 } from './types';
 
 // Schemas
@@ -60,6 +62,8 @@ export {
   RecommendationSchema,
   HairstyleLibraryEntrySchema,
   ProviderRecommendationSchema,
+  CurationSchema,
+  coerceCuration,
   AnalyzeRequestSchema,
   RecommendRequestSchema,
   PreviewRequestSchema,
@@ -93,7 +97,15 @@ export {
   buildRecommendPrompt,
   buildStylePreviewPrompt,
   buildFaceEditPrompt,
+  buildFaceShapeReferencePrompt,
 } from './prompt';
+
+// Face-shape reference image catalog
+export {
+  FACE_SHAPE_REFERENCES,
+  getFaceShapeReference,
+  type FaceShapeReference,
+} from './face-shapes-catalog';
 
 // Image Validation
 export {

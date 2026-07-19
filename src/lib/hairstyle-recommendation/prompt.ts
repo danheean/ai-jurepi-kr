@@ -9,7 +9,22 @@
  */
 
 import type { HairstyleLibraryEntry, RecommendInput } from './types';
+import type { FaceShape } from './constants';
 import { MIN_RECS, MAX_RECS } from './constants';
+
+/**
+ * Geometric proportion descriptions per face shape, used only by
+ * buildFaceShapeReferencePrompt (offline reference-image generation).
+ */
+const FACE_SHAPE_GEOMETRY: Record<FaceShape, string> = {
+  oval: 'balanced proportions, cheekbones slightly wider than the gently rounded jaw, forehead slightly wider than the jaw, soft curves throughout',
+  round: 'full cheeks, similar face width and length, soft rounded jawline with no angles, forehead and jaw about equally wide',
+  square: 'strong angular jawline, broad forehead, jaw and forehead nearly equal width, minimal taper from cheekbones to jaw',
+  heart: 'wide forehead and cheekbones tapering down to a narrow, pointed chin',
+  oblong: 'noticeably longer face than wide, forehead, cheekbones and jaw similar width, elongated overall proportions',
+  diamond: 'narrow forehead and narrow jawline, cheekbones the widest point of the face, angular pointed chin',
+  triangle: 'narrow forehead, jawline visibly wider than the forehead, angular jaw',
+};
 
 /**
  * Build a prompt for face-shape analysis.
@@ -114,16 +129,24 @@ ${candidateList}
 
 ${MIN_RECS}~${MAX_RECS}개를 선택하여 다음 JSON 형식으로 응답하세요. 위 목록의 id만 사용하세요:
 
-[
-  {
-    "hairstyleId": "id (위 목록에서만)",
-    "reason": "이 사람의 얼굴형과 선호도에 어울리는 이유 (280자 이하)",
-    "tips": ["스타일링/유지보수 팁1 (120자 이하)", "팁2", ...]
-  },
-  ...
-]
+{
+  "recommendations": [
+    {
+      "hairstyleId": "id (위 목록에서만)",
+      "reason": "이 사람의 얼굴형과 선호도에 어울리는 이유 (280자 이하)",
+      "tips": ["스타일링/유지보수 팁1 (120자 이하)", "팁2", ...]
+    },
+    ...
+  ],
+  "curation": {
+    "summary": "전체적으로 왜 이 스타일들이 이 얼굴형·선호도에 잘 맞는지 요약 (400자 이하)",
+    "avoid": [
+      { "label": "피하는 편이 좋은 스타일 계열 (특정 후보 id가 아닌 자유 서술, 60자 이하)", "reason": "이유 (160자 이하)" }
+    ]
+  }
+}
 
-각 추천의 reason은 서로 겹치지 않아야 합니다. 스타일마다 이 얼굴형·선호도와 연결된 구체적인 근거를 제시하고, 같은 문장을 반복하지 마세요.`;
+각 추천의 reason은 서로 겹치지 않아야 합니다. 스타일마다 이 얼굴형·선호도와 연결된 구체적인 근거를 제시하고, 같은 문장을 반복하지 마세요. curation.avoid는 최대 3개까지, 이 사람의 얼굴형·선호도에 실제로 안 어울리는 스타일 계열만 담으세요(과도한 일반화 금지). curation은 선택 사항입니다 — 확신이 없으면 avoid를 빈 배열로 두세요.`;
   }
 
   return `You are a hairstyle recommendation expert. Choose ONLY from the provided candidate list.
@@ -140,16 +163,24 @@ ${candidateList}
 
 Select ${MIN_RECS}–${MAX_RECS} and respond in this JSON format. Use ONLY ids from the list above:
 
-[
-  {
-    "hairstyleId": "id (from list only)",
-    "reason": "Why this suits their face shape and preferences (max 280 chars)",
-    "tips": ["Styling/maintenance tip 1 (max 120 chars)", "Tip 2", ...]
-  },
-  ...
-]
+{
+  "recommendations": [
+    {
+      "hairstyleId": "id (from list only)",
+      "reason": "Why this suits their face shape and preferences (max 280 chars)",
+      "tips": ["Styling/maintenance tip 1 (max 120 chars)", "Tip 2", ...]
+    },
+    ...
+  ],
+  "curation": {
+    "summary": "Overall summary of why these styles fit this face shape and preferences (max 400 chars)",
+    "avoid": [
+      { "label": "A style family to avoid (free text, NOT a candidate id, max 60 chars)", "reason": "Why (max 160 chars)" }
+    ]
+  }
+}
 
-Each recommendation's reason must be distinct: tie it to this specific face shape and preferences, and never repeat the same sentence across recommendations.`;
+Each recommendation's reason must be distinct: tie it to this specific face shape and preferences, and never repeat the same sentence across recommendations. curation.avoid holds at most 3 entries and must only name style families that genuinely don't suit this face shape and preferences (no over-generalizing). curation is optional — if unsure, leave avoid as an empty array.`;
 }
 
 /**
@@ -202,6 +233,34 @@ Requirements:
 - No text, watermarks, or logos
 - Show hair detail and styling technique
 - Neutral expression, facing camera`;
+}
+
+/**
+ * Build a prompt for a face-shape reference portrait (offline asset generation only).
+ *
+ * Generates a neutral, gender-generic portrait whose proportions clearly illustrate
+ * the given face shape — NOT a hairstyle reference (hair is pulled back/short so the
+ * jaw/cheek/forehead proportions read clearly). Used exclusively by
+ * scripts/generate-face-shape-refs.ts to pre-generate the 7 static reference images
+ * in public/face-shapes/; never called at request time.
+ *
+ * Constraints:
+ * - Photorealistic, neutral expression, facing camera
+ * - No text, watermarks, or logos
+ * - No user input (deterministic, same shape → same prompt)
+ * - Locale not used (English factual description, matches buildStylePreviewPrompt convention)
+ */
+export function buildFaceShapeReferencePrompt(shape: FaceShape): string {
+  return `Photorealistic portrait photograph illustrating a face shape. Subject: a young adult with a ${shape} face shape, hair pulled back or short so the face shape is clearly visible.
+Face shape proportions:
+- ${FACE_SHAPE_GEOMETRY[shape]}
+
+Requirements:
+- Professional photography quality
+- Clear, well-lit, plain neutral background
+- No text, watermarks, or logos
+- Neutral expression, facing camera, front-on angle
+- Hair styled away from the face so jawline, cheekbones, and forehead width are clearly visible`;
 }
 
 /**

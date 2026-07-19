@@ -126,6 +126,64 @@ export type ProviderRecommendation = z.infer<
 >;
 
 /**
+ * Curation: optional overall summary + "styles to avoid" (rev 3).
+ *
+ * Authored by the SAME recommend() call as the recommendations (no second AI
+ * request). `avoid[].label` is free text, NOT a catalog id — the model
+ * describes a style family to avoid (e.g. "very short buzzcut styles"),
+ * not a specific hairstyleId, so no candidate-set validation applies here.
+ */
+export const CurationSchema = z.object({
+  summary: z.string().max(400),
+  avoid: z
+    .array(
+      z.object({
+        label: z.string().max(60),
+        reason: z.string().max(160),
+      })
+    )
+    .max(3),
+});
+
+export type Curation = z.infer<typeof CurationSchema>;
+
+/**
+ * Leniently extract and validate an optional `curation` block from a raw
+ * provider payload. Mirrors the guardrail philosophy of
+ * `coerceProviderRecommendations`: clamp field lengths, and on ANY
+ * missing/malformed data return `undefined` rather than throwing — a broken
+ * curation block must never block the core recommendations from returning.
+ *
+ * Pure function (no side effects, immutable input).
+ */
+export function coerceCuration(raw: unknown): Curation | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+
+  const curation = (raw as { curation?: unknown }).curation;
+  if (!curation || typeof curation !== 'object') return undefined;
+
+  const c = curation as Record<string, unknown>;
+
+  const clamped = {
+    summary: typeof c.summary === 'string' ? c.summary.slice(0, 400) : c.summary,
+    avoid: Array.isArray(c.avoid)
+      ? c.avoid.slice(0, 3).map((item) => {
+          if (!item || typeof item !== 'object') return item;
+          const a = item as Record<string, unknown>;
+          return {
+            ...a,
+            label: typeof a.label === 'string' ? a.label.slice(0, 60) : a.label,
+            reason: typeof a.reason === 'string' ? a.reason.slice(0, 160) : a.reason,
+          };
+        })
+      : c.avoid,
+  };
+
+  const parsed = CurationSchema.safeParse(clamped);
+  return parsed.success ? parsed.data : undefined;
+}
+
+/**
  * Leniently coerce a raw provider payload into validated recommendations.
  *
  * Providers may return a bare array, a `{ recommendations: [...] }` wrapper,

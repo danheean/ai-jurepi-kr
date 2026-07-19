@@ -10,13 +10,14 @@ import type {
   FaceAnalysis,
   HairstyleAI,
   HairstyleLibraryEntry,
-  ProviderRecommendation,
   RecommendInput,
+  RecommendResult,
 } from '../types';
 import { buildAnalyzePrompt, buildRecommendPrompt } from '../prompt';
 import {
   FaceAnalysisSchema,
   coerceProviderRecommendations,
+  coerceCuration,
 } from '../schema';
 import { AiError } from '../../ai/types';
 import { OllamaClient } from '../../ai/ollama';
@@ -78,23 +79,28 @@ export class OllamaProvider implements HairstyleAI {
   async recommend(
     input: RecommendInput,
     candidates: HairstyleLibraryEntry[]
-  ): Promise<ProviderRecommendation[]> {
+  ): Promise<RecommendResult> {
     try {
       const prompt = buildRecommendPrompt(input, candidates, input.locale);
 
       // Accept whatever JSON the model produced; the domain coercer tolerates
       // bare arrays, `{ recommendations }` wrappers, and single objects, clamps
-      // length overruns, and drops malformed/hallucinated items (route backfills)
+      // length overruns, and drops malformed/hallucinated items (route backfills).
+      // The optional `curation` block is extracted separately and never blocks
+      // recommendations from returning (see coerceCuration).
       const raw = await this.client.generateJson({
         prompt,
         schema: z.unknown(),
         maxRetries: 1,
       });
 
-      return coerceProviderRecommendations(
-        raw,
-        candidates.map((c) => c.id)
-      );
+      return {
+        recommendations: coerceProviderRecommendations(
+          raw,
+          candidates.map((c) => c.id)
+        ),
+        curation: coerceCuration(raw),
+      };
     } catch (error) {
       if (error instanceof AiError) {
         throw error;
