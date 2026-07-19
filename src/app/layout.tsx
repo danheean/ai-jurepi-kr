@@ -35,6 +35,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <head>
         <meta name="referrer" content="strict-origin-when-cross-origin" />
         <meta name="x-ua-compatible" content="ie=edge" />
+        {/* Pretendard (variable) + Gmarket Sans as dynamic subsets, served from
+            /public so webpack never parses their ~180 @font-face rules
+            (css-loader stack-overflows on them). The browser downloads only the
+            unicode-range chunks a page actually uses. */}
+        <link rel="stylesheet" href="/fonts/fonts.css" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#e60023" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
