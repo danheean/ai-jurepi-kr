@@ -4,52 +4,11 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import type { FaceShape } from '@/lib/hairstyle-recommendation';
 import { FACE_SHAPES } from '@/lib/hairstyle-recommendation';
+import { getFaceShapeReference } from '@/lib/hairstyle-recommendation/face-shapes-catalog';
 
 interface FaceShapePickerProps {
   onSelect: (shape: FaceShape) => void;
 }
-
-// Simple SVG face silhouettes for each shape
-const FaceShapeSvg: Record<FaceShape, React.ReactNode> = {
-  oval: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <ellipse cx="50" cy="70" rx="30" ry="50" fill="currentColor" />
-    </svg>
-  ),
-  round: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <circle cx="50" cy="70" r="45" fill="currentColor" />
-    </svg>
-  ),
-  square: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <rect x="20" y="30" width="60" height="80" rx="8" fill="currentColor" />
-    </svg>
-  ),
-  heart: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <path
-        d="M50 130 Q20 90 20 60 Q20 40 35 35 Q50 30 50 45 Q50 30 65 35 Q80 40 80 60 Q80 90 50 130"
-        fill="currentColor"
-      />
-    </svg>
-  ),
-  oblong: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <ellipse cx="50" cy="70" rx="25" ry="55" fill="currentColor" />
-    </svg>
-  ),
-  diamond: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <path d="M50 20 L75 70 L50 120 L25 70 Z" fill="currentColor" />
-    </svg>
-  ),
-  triangle: (
-    <svg viewBox="0 0 100 140" className="w-full h-full">
-      <path d="M50 30 L80 110 L20 110 Z" fill="currentColor" />
-    </svg>
-  ),
-};
 
 export default function FaceShapePicker({ onSelect }: FaceShapePickerProps) {
   const t = useTranslations('tools.hairstyle-recommendation');
@@ -102,9 +61,16 @@ export default function FaceShapePicker({ onSelect }: FaceShapePickerProps) {
               : 'border-2 border-hairline bg-canvas hover:border-primary'
           }`}
         >
-          {/* SVG silhouette */}
-          <div className="w-16 h-20 text-ink">
-            {FaceShapeSvg[shape]}
+          {/* AI-generated face-shape reference image */}
+          <div className="w-16 h-20 rounded-sm overflow-hidden">
+            <img
+              src={getFaceShapeReference(shape).image.src}
+              alt=""
+              width={768}
+              height={960}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
           </div>
 
           {/* Label */}
