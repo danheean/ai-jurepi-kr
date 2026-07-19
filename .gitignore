@@ -61,3 +61,9 @@ evals/hairstyle/prompts.generated.json
 # public repo hygiene: celebrity-name labels stay local
 evals/hairstyle/fixtures.json
 evals/**/__pycache__/
+
+# tool state / generated artifacts
+.impeccable/
+.claude/worktrees/
+docs/services/beauty/hairstyle-recommendation/poc/__pycache__/
+docs/services/beauty/hairstyle-recommendation/poc/output/
