@@ -134,28 +134,32 @@ const config: Config = {
           '1.125rem',
           { lineHeight: '1.3', letterSpacing: '0' },
         ],
+        'body-lg': [
+          '1.125rem',
+          { lineHeight: '1.6', letterSpacing: '0' },
+        ],
         'body-md': [
           '1rem',
-          { lineHeight: '1.4', letterSpacing: '0' },
+          { lineHeight: '1.55', letterSpacing: '0' },
         ],
         'body-strong': [
           '1rem',
-          { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' },
+          { lineHeight: '1.55', letterSpacing: '0', fontWeight: '600' },
         ],
         'body-sm': [
           '0.875rem',
-          { lineHeight: '1.4', letterSpacing: '0' },
+          { lineHeight: '1.5', letterSpacing: '0' },
         ],
         'body-sm-strong': [
           '0.875rem',
-          { lineHeight: '1.4', letterSpacing: '0', fontWeight: '700' },
+          { lineHeight: '1.5', letterSpacing: '0', fontWeight: '700' },
         ],
         'caption-md': [
-          '0.75rem',
+          '0.8125rem',
           { lineHeight: '1.5', letterSpacing: '0', fontWeight: '500' },
         ],
         'caption-sm': [
-          '0.75rem',
+          '0.8125rem',
           { lineHeight: '1.4', letterSpacing: '0' },
         ],
         'link-md': [
@@ -163,8 +167,8 @@ const config: Config = {
           { lineHeight: '1.4', letterSpacing: '0', fontWeight: '600' },
         ],
         'button-md': [
-          '0.875rem',
-          { lineHeight: '1', letterSpacing: '0', fontWeight: '700' },
+          '0.9375rem',
+          { lineHeight: '1.2', letterSpacing: '0', fontWeight: '600' },
         ],
         'button-sm': [
           '0.75rem',

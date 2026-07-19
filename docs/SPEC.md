@@ -494,9 +494,15 @@ wrangler.jsonc / open-next.config.ts  # OpenNext + Workers config, KV bindings, 
         </header>
         <main>
           <home_page>                    <!-- ★ MAIN DASHBOARD -->
+            <!-- Layout (2026-07-19): every section wraps content in max-w-container (1120px)
+                 mx-auto — hero inner, share row, search, category filter, favorites toggle row,
+                 tool grid. Header/Footer/ConsentBanner share the same container so left edges
+                 align on wide screens (matches apps.jurepi.kr --container-max).
+                 The search → chips → favorites → grid block is one continuous bg-canvas
+                 surface (no divider borders, no surface-soft bands between rows). -->
             <hero> <eyebrow /> <h1 /> <subhead /> <search_bar /> <tool_character home/> </hero>
             <ad_slot variant="leaderboard" />
-            <category_filter /> <favorites_filter_toggle />  <!-- pill row -->
+            <category_filter /> <favorites_filter_toggle />  <!-- pill row, centered in container -->
             <tool_grid> <tool_card /> ... </tool_grid>
             <share_buttons />            <!-- Below grid or in hero -->
           </home_page>

@@ -47,7 +47,7 @@ export function ConsentBanner() {
       ref={bannerRef}
       className="fixed bottom-0 left-0 right-0 z-50 bg-surface-dark text-on-dark p-lg border-t border-hairline"
     >
-      <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row items-center justify-between gap-lg">
+      <div className="max-w-container mx-auto flex flex-col md:flex-row items-center justify-between gap-lg">
         <div className="flex-1">
           <p className="text-body-md">{t('message')}</p>
         </div>

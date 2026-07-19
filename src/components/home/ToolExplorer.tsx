@@ -64,16 +64,16 @@ function ToolExplorerContent({ initialTools, categories }: ToolExplorerProps) {
     <>
       <h2 className="sr-only">{t('toolsHeading')}</h2>
       <SearchBar onSearch={handleSearch} initialQuery={searchQuery} />
-      <div className="flex gap-lg flex-col">
-        {categories.length > 0 && (
-          <CategoryFilter
-            categories={categories}
-            activeCategory={activeCategory || undefined}
-            onCategoryChange={handleCategoryChange}
-          />
-        )}
-        {/* Favorites filter toggle on its own row, left-aligned */}
-        <div className="px-lg">
+      {categories.length > 0 && (
+        <CategoryFilter
+          categories={categories}
+          activeCategory={activeCategory || undefined}
+          onCategoryChange={handleCategoryChange}
+        />
+      )}
+      {/* Favorites filter toggle centered in container */}
+      <div className="px-lg pb-lg bg-canvas">
+        <div className="max-w-container mx-auto">
           <FavoritesFilterToggle
             active={favoritesOnly}
             onToggle={handleToggleFavoritesOnly}

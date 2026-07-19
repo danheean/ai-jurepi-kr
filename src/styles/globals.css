@@ -29,6 +29,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Tailwind v4 preflight leaves buttons at cursor:default (v3 gave them
+   pointer). Restore the pointer affordance for every enabled control so
+   hover always communicates clickability — per the official v4 upgrade
+   guide recommendation. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 /* Reduce motion respects user preference */
 @media (prefers-reduced-motion: reduce) {
   *,

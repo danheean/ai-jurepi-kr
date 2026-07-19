@@ -62,7 +62,7 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      <div className="mx-auto grid max-w-screen-2xl grid-cols-1 items-center gap-xl md:grid-cols-2 md:gap-section">
+      <div className="mx-auto grid max-w-container grid-cols-1 items-center gap-xl md:grid-cols-2 md:gap-section">
         {/* Left: Eyebrow, Headline, Subhead, CTA */}
         <div>
           {/* Eyebrow */}
@@ -82,7 +82,7 @@ export function Hero() {
           </h1>
 
           {/* Subhead */}
-          <p className="mb-xl max-w-[34rem] text-pretty break-keep text-body-md leading-relaxed text-body">
+          <p className="mb-xl max-w-[34rem] text-pretty break-keep text-body-lg text-body">
             {t('subtitle')}
           </p>
 

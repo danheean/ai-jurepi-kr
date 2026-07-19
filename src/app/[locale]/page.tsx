@@ -39,7 +39,7 @@ export default async function HomePage({ params }: Props) {
       <Hero />
       {/* Share buttons row — sits close under the hero (related affordance),
           with a full section gap below before the tools list. */}
-      <div className="mx-auto max-w-screen-2xl px-lg pt-lg pb-section">
+      <div className="mx-auto max-w-container px-lg pt-lg pb-section">
         <ShareButtons orientation="horizontal" />
       </div>
       <ToolExplorer initialTools={allToolsList} categories={categories} />

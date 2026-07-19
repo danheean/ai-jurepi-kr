@@ -409,18 +409,19 @@ Each tool category carries a distinct accent color used on icon tiles, category 
 | `{typography.heading-xl}` | 28px | 700 | Gmarket Sans | 1.2 | -1.2px | Section heading, tool title on detail page |
 | `{typography.heading-lg}` | 22px | 600 | Pretendard | 1.25 | 0 | Sub-section heading, modal title |
 | `{typography.heading-md}` | 18px | 600 | Pretendard | 1.3 | 0 | Card title, in-grid label |
-| `{typography.body-md}` | 16px | 400 | Pretendard | 1.4 | 0 | Body copy, modal body, default paragraph |
-| `{typography.body-strong}` | 16px | 600 | Pretendard | 1.4 | 0 | Inline emphasis, nav link, form label |
-| `{typography.body-sm}` | 14px | 400 | Pretendard | 1.4 | 0 | Helper text, metadata |
-| `{typography.body-sm-strong}` | 14px | 700 | Pretendard | 1.4 | 0 | Label, small header |
-| `{typography.caption-md}` | 12px | 500 | Pretendard | 1.5 | 0 | Caption, link metadata |
-| `{typography.caption-sm}` | 12px | 400 | Pretendard | 1.4 | 0 | Smallest utility text, copyright |
-| `{typography.link-md}` | 16px | 600 | Pretendard | 1.4 | 0 | Inline anchor link in body prose |
-| `{typography.button-md}` | 14px | 700 | Pretendard | 1 | 0 | Standard button label |
+| `{typography.body-lg}` | 18px | 400 | Pretendard | 1.6 | 0 | Hero subhead, lede paragraph |
+| `{typography.body-md}` | 16px | 400 | Pretendard | 1.55 | 0 | Body copy, modal body, default paragraph |
+| `{typography.body-strong}` | 16px | 600 | Pretendard | 1.55 | 0 | Inline emphasis, nav link, form label |
+| `{typography.body-sm}` | 14px | 400 | Pretendard | 1.5 | 0 | Helper text, metadata |
+| `{typography.body-sm-strong}` | 14px | 700 | Pretendard | 1.5 | 0 | Label, small header |
+| `{typography.caption-md}` | 13px | 500 | Pretendard | 1.5 | 0 | Caption, link metadata |
+| `{typography.caption-sm}` | 13px | 400 | Pretendard | 1.4 | 0 | Smallest utility text, copyright |
+| `{typography.link-md}` | 16px | 600 | Pretendard | 1.55 | 0 | Inline anchor link in body prose |
+| `{typography.button-md}` | 15px | 600 | Pretendard | 1.2 | 0 | Standard button label |
 | `{typography.button-sm}` | 12px | 700 | Pretendard | 1 | 0 | Compact badge, in-card button |
 
 ### Principles
-Display roles (display-xl, display-lg, heading-xl) use Gmarket Sans 700 for a rounded, friendly voice. The negative tracking on display tiers (-1.2px / -0.8px) creates tighter, more confident headlines. Body copy sits at a generous 1.4 line-height to keep multi-line descriptions breathing. The display/body pairing (rounded sans / geometric sans) establishes brand personality without requiring new font weights or faces.
+Display roles (display-xl, display-lg, heading-xl) use Gmarket Sans 700 for a rounded, friendly voice. The negative tracking on display tiers (-1.2px / -0.8px) creates tighter, more confident headlines. Body copy sits at a generous 1.55 line-height (1.5 for small body, 1.6 for the body-lg lede tier) to keep multi-line descriptions breathing — matched to apps.jurepi.kr for cross-site consistency (2026-07-19). Buttons read at 15px/600 and captions at 13px so UI labels never feel undersized inside the 1120px container. The display/body pairing (rounded sans / geometric sans) establishes brand personality without requiring new font weights or faces.
 
 ## Layout
 
@@ -432,7 +433,8 @@ Display roles (display-xl, display-lg, heading-xl) use Gmarket Sans 700 for a ro
 - **Modal padding:** `{component.modal-card}` uses 32px internal padding (`{spacing.xxl}`) on all sides.
 
 ### Grid & Container
-- **Max width:** ~1280px content area at desktop with 24px gutters (~48px at ultrawide).
+- **Home & shell surfaces (standard, 2026-07-19):** `max-w-container` (1120px) centered with `{spacing.lg}` (16px) gutters — Hero inner, share row, search bar, category filter, favorites toggle row, tool grid, plus Header / Footer / ConsentBanner. Aligned with apps.jurepi.kr (same 1120px `--container-max`). On ultrawide monitors content gathers in the center instead of stretching; no row may skip the container wrapper (that reads as left-drift).
+- **Home explorer background:** the search → category chips → favorites toggle → tool grid block sits on one continuous `{colors.canvas}` surface — no divider borders between rows and no exposed `{colors.surface-soft}` bands. The favorites row lives inside the same centered container as the grid.
 - **Tool detail pages (standard, 2026-07-18):** `max-w-screen-xl` (1280px) wide container — aligned with apps.jurepi.kr tool pages. The tool workspace (interactive module) sits immediately after the ToolIntro header (character avatar + category eyebrow + display title + description) and uses a `grid-cols-1 lg:grid-cols-3` split where a tool needs a persistent side rail. The old narrow `max-w-3xl` prose column is retired for tool pages.
 - **Tool card grid:** auto-fitting column-based layout — 5–6 columns at ultrawide, 4 columns at desktop, 3 at tablet, 2 at mobile-landscape, 1 at mobile. Gutters are `{spacing.sm}` (8px) horizontal and vertical.
 - **Home feature row:** asymmetric 2-column split where text and imagery alternate left/right down the page.

@@ -167,18 +167,19 @@
  *   --font-heading-md:  18px / 600 / line 1.3
  *
  * Body roles:
- *   --font-body-md:     16px / 400 / line 1.4
- *   --font-body-strong: 16px / 600 / line 1.4
- *   --font-body-sm:     14px / 400 / line 1.4
- *   --font-body-sm-strong: 14px / 700 / line 1.4
+ *   --font-body-lg:     18px / 400 / line 1.6
+ *   --font-body-md:     16px / 400 / line 1.55
+ *   --font-body-strong: 16px / 600 / line 1.55
+ *   --font-body-sm:     14px / 400 / line 1.5
+ *   --font-body-sm-strong: 14px / 700 / line 1.5
  *
  * Captions:
- *   --font-caption-md:  12px / 500 / line 1.5
- *   --font-caption-sm:  12px / 400 / line 1.4
+ *   --font-caption-md:  13px / 500 / line 1.5
+ *   --font-caption-sm:  13px / 400 / line 1.4
  *
  * Links & Buttons:
  *   --font-link-md:     16px / 600 / line 1.4
- *   --font-button-md:   14px / 700 / line 1
+ *   --font-button-md:   15px / 600 / line 1.2
  *   --font-button-sm:   12px / 700 / line 1
  *
  * These are implemented via tailwind.config.ts fontSize utilities;

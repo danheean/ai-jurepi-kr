@@ -14,7 +14,7 @@ export function Footer() {
 
   return (
     <footer className="bg-canvas border-t border-hairline mt-section">
-      <div className="max-w-screen-2xl mx-auto px-lg py-xxl">
+      <div className="max-w-container mx-auto px-lg py-xxl">
         {/* Link Grid */}
         <nav
           aria-label={t('nav.footerNav')}

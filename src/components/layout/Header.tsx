@@ -32,7 +32,7 @@ export function Header() {
     <header className="sticky top-0 z-40 bg-canvas border-b border-hairline">
       <nav
         aria-label={t('mainNav')}
-        className="flex items-center justify-between px-lg py-md max-w-screen-2xl mx-auto h-16"
+        className="flex items-center justify-between px-lg py-md max-w-container mx-auto h-16"
       >
         {/* Wordmark — matches apps.jurepi.kr (Gmarket Sans, text-xl) */}
         <Link

@@ -47,7 +47,7 @@ export function FavoritesFilterToggle({
       aria-pressed={active}
       aria-label={t('filterAria')}
       data-testid={testId || 'favorites-filter-toggle'}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm whitespace-nowrap transition-colors duration-150 min-h-11 flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-focus-outer ${
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-body-sm whitespace-nowrap transition-colors duration-150 min-h-11 flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-focus-outer ${
         active
           ? 'border-transparent bg-accent-rose-soft text-accent-rose-ink shadow-card font-semibold'
           : 'border-accent-rose/40 bg-surface-card text-accent-rose-ink font-medium hover:bg-accent-rose-soft motion-safe:active:scale-95'
@@ -63,7 +63,7 @@ export function FavoritesFilterToggle({
       {count > 0 && (
         <span
           aria-hidden="true"
-          className={`ml-0.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums ${
+          className={`ml-0.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-caption-sm font-semibold tabular-nums ${
             active
               ? 'bg-canvas text-accent-rose-ink'
               : 'bg-accent-rose-soft text-accent-rose-ink'

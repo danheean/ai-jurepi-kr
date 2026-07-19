@@ -40,7 +40,7 @@ export function SearchBar({ onSearch, initialQuery = '' }: SearchBarProps) {
 
   return (
     <div className="px-lg py-xl bg-canvas">
-      <div className="max-w-screen-2xl mx-auto">
+      <div className="max-w-container mx-auto">
         <div className="relative">
           <Search className="absolute left-lg top-1/2 -translate-y-1/2 w-5 h-5 text-mute pointer-events-none" />
           <input

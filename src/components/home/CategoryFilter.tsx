@@ -17,8 +17,8 @@ export function CategoryFilter({
   onCategoryChange,
 }: CategoryFilterProps) {
   return (
-    <div className="px-lg py-lg bg-canvas border-b border-hairline">
-      <div className="max-w-screen-2xl mx-auto flex items-center gap-md overflow-x-auto pb-md">
+    <div className="px-lg py-lg bg-canvas">
+      <div className="max-w-container mx-auto flex items-center gap-md overflow-x-auto pb-md">
         {/* All button */}
         <button
           onClick={() => onCategoryChange(null)}
