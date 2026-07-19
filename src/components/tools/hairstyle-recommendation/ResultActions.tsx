@@ -22,25 +22,6 @@ export default function ResultActions({
   const t = useTranslations('tools.hairstyle-recommendation');
   const locale = useLocale() as 'ko' | 'en';
   const { addToast } = useToast();
-  const [isCooldown, setIsCooldown] = React.useState(false);
-  const [cooldownSeconds, setCooldownSeconds] = React.useState(0);
-
-  // Cooldown timer for rate limiting
-  React.useEffect(() => {
-    if (!isCooldown) return;
-
-    const timer = setInterval(() => {
-      setCooldownSeconds((prev) => {
-        if (prev <= 1) {
-          setIsCooldown(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isCooldown]);
 
   // Copy summary to clipboard
   const handleCopySummary = async () => {
@@ -60,7 +41,7 @@ export default function ResultActions({
     } catch {
       addToast({
         type: 'error',
-        message: 'Failed to copy to clipboard',
+        message: t('result.copyFailed'),
       });
     }
   };
@@ -96,17 +77,16 @@ export default function ResultActions({
         {/* Regenerate */}
         <button
           onClick={onRegenerate}
-          disabled={isCooldown}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash transition-all duration-150"
+          className="flex items-center gap-2 min-h-[44px] px-4 py-2 bg-primary text-on-primary rounded-md text-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash transition-all duration-150"
         >
           <RefreshCw className="w-4 h-4" strokeWidth={1.5} />
-          {isCooldown ? `${t('result.regenerate')} (${cooldownSeconds}s)` : t('result.regenerate')}
+          {t('result.regenerate')}
         </button>
 
         {/* Copy Summary */}
         <button
           onClick={handleCopySummary}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary-bg text-ink rounded-md font-button-md hover:bg-secondary-pressed transition-all duration-150"
+          className="flex items-center gap-2 min-h-[44px] px-4 py-2 bg-secondary-bg text-ink rounded-md text-button-md hover:bg-secondary-pressed transition-all duration-150"
         >
           <Copy className="w-4 h-4" strokeWidth={1.5} />
           {t('result.copySummary')}
@@ -115,7 +95,7 @@ export default function ResultActions({
         {/* Share */}
         <button
           onClick={handleShare}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary-bg text-ink rounded-md font-button-md hover:bg-secondary-pressed transition-all duration-150"
+          className="flex items-center gap-2 min-h-[44px] px-4 py-2 bg-secondary-bg text-ink rounded-md text-button-md hover:bg-secondary-pressed transition-all duration-150"
         >
           <Share2 className="w-4 h-4" strokeWidth={1.5} />
           {t('result.share')}
@@ -125,7 +105,7 @@ export default function ResultActions({
       {/* Reset button (text link) */}
       <button
         onClick={onReset}
-        className="flex items-center gap-2 text-ink-soft hover:text-ink underline text-body-sm"
+        className="flex items-center gap-2 min-h-[44px] px-1 text-ink-soft hover:text-ink underline text-body-sm"
       >
         <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
         {t('result.reset')}

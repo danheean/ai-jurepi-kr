@@ -15,9 +15,9 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
   return (
     <div className="rounded-md bg-canvas border border-hairline p-5 space-y-4">
       {/* Header: Face shape + gender badge + confidence meter */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-heading-md font-heading-md text-ink">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-heading-md font-semibold text-ink">
             {t(`face.${analysis.faceShape}`)}
           </h3>
           {analysis.gender && analysis.gender !== 'unknown' && (
@@ -35,6 +35,7 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
                 className="h-full bg-primary transition-all duration-300"
                 style={{ width: `${analysis.confidence * 100}%` }}
                 role="progressbar"
+                aria-label={t('analysis.matchSuffix')}
                 aria-valuenow={confidencePercent}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -50,7 +51,7 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
       {/* Features as chips */}
       {analysis.features && analysis.features.length > 0 && (
         <div className="space-y-2">
-          <p className="text-caption-sm font-body-strong text-mute">
+          <p className="text-caption-sm font-semibold text-mute">
             {t('analysis.featuresLabel')}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -75,7 +76,7 @@ export default function AnalysisCard({ analysis }: AnalysisCardProps) {
 
       {/* Low confidence warning */}
       {analysis.confidence < 0.5 && (
-        <div className="rounded-md bg-surface-soft border-l-2 border-warning p-3">
+        <div className="rounded-md bg-warning/10 border border-warning/30 p-3">
           <p className="text-body-sm text-charcoal">
             {t('analysis.lowConfidence')}
           </p>

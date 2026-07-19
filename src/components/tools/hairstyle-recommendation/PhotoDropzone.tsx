@@ -119,13 +119,12 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={!preview && !isResizing ? handleTapChoose : undefined}
         className={`relative rounded-md border-2 border-dashed p-8 text-center transition-all duration-150 ${
           isDragOver
             ? 'border-primary bg-surface-card'
             : preview
               ? 'border-hairline bg-surface-card'
-              : 'border-hairline bg-canvas hover:border-primary cursor-pointer'
+              : 'border-hairline bg-canvas hover:border-primary'
         }`}
       >
         <input
@@ -134,11 +133,15 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
           accept={ALLOWED_IMAGE_TYPES.join(',')}
           onChange={handleFileInputChange}
           className="hidden"
-          capture="user"
         />
 
         {!preview ? (
-          <>
+          <button
+            type="button"
+            onClick={handleTapChoose}
+            disabled={isResizing}
+            className="group block w-full cursor-pointer text-center disabled:cursor-default"
+          >
             <Upload className="w-8 h-8 text-mute mx-auto mb-3" strokeWidth={1.5} />
             <p className="text-body text-charcoal mb-1">
               {t('upload.dropzone')}
@@ -146,13 +149,12 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
             <p className="text-caption-sm text-mute">
               {t('upload.hint')}
             </p>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleTapChoose();
-              }}
-              disabled={isResizing}
-              className="mt-4 px-4 py-2 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash"
+            <span
+              className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-button-md ${
+                isResizing
+                  ? 'bg-surface-card text-ash'
+                  : 'bg-primary text-on-primary group-hover:bg-primary-pressed'
+              }`}
             >
               {isResizing ? (
                 <>
@@ -162,8 +164,8 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
               ) : (
                 t('upload.choose')
               )}
-            </button>
-          </>
+            </span>
+          </button>
         ) : (
           <>
             <div className="relative inline-block mb-3">
@@ -183,12 +185,9 @@ export default function PhotoDropzone({ onFileSelected }: PhotoDropzoneProps) {
               {fileName}
             </p>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClear();
-              }}
+              onClick={handleClear}
               disabled={isResizing}
-              className="text-sm text-ink-soft hover:text-ink underline disabled:text-ash"
+              className="inline-flex items-center min-h-[44px] px-2 text-sm text-ink-soft hover:text-ink underline disabled:text-ash"
             >
               {t('upload.remove')}
             </button>

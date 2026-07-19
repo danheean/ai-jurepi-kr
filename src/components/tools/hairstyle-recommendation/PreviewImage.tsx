@@ -2,9 +2,10 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { PreviewState } from '@/lib/hairstyle-recommendation/flow';
+import { getCreditLabel } from '@/lib/hairstyle-recommendation/tag-labels';
 
 interface ReferenceImage {
   src: string;
@@ -24,8 +25,8 @@ export default function PreviewImage({
   hairstyleName,
 }: PreviewImageProps) {
   const t = useTranslations('tools.hairstyle-recommendation');
+  const locale = useLocale() as 'ko' | 'en';
   const prefersReducedMotion = useReducedMotion();
-  const [imageLoaded, setImageLoaded] = React.useState(false);
 
   const isGenerating = previewState.status === 'generating';
   const isDone = previewState.status === 'done' && previewState.imageDataUrl;
@@ -42,15 +43,15 @@ export default function PreviewImage({
           src={referenceImage.src}
           alt={isDone ? t('preview.altGenerated', { name: hairstyleName }) : referenceImage.alt}
           fill
+          sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 92vw"
           className="object-cover"
           loading="lazy"
-          onLoad={() => setImageLoaded(true)}
         />
 
         {/* Credit scrim (only for reference image when not generated) */}
         {!isDone && referenceImage.credit && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-2">
-            <p className="text-caption-sm text-on-dark-mute">{referenceImage.credit}</p>
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+            <p className="text-caption-sm text-on-dark">{getCreditLabel(referenceImage.credit, locale)}</p>
           </div>
         )}
       </div>

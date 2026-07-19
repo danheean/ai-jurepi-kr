@@ -4,6 +4,7 @@ import React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { Recommendation } from '@/lib/hairstyle-recommendation';
 import type { PreviewState } from '@/lib/hairstyle-recommendation/flow';
+import { getTagLabel } from '@/lib/hairstyle-recommendation/tag-labels';
 import PreviewImage from './PreviewImage';
 
 interface RecommendationCardProps {
@@ -31,19 +32,19 @@ export default function RecommendationCard({
       {/* Content Section */}
       <div className="p-4 space-y-3">
         {/* Name */}
-        <h3 className="text-heading-md font-heading-md text-ink line-clamp-2">
+        <h3 className="text-heading-md font-semibold text-ink line-clamp-2">
           {name}
         </h3>
 
         {/* Reason */}
-        <p className="text-body-sm text-charcoal leading-1.55 line-clamp-3">
+        <p className="text-body-sm text-charcoal leading-[1.55] line-clamp-3">
           {recommendation.reason}
         </p>
 
         {/* Tips */}
         {recommendation.tips && recommendation.tips.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-caption-sm font-body-strong text-mute">
+            <p className="text-caption-sm font-semibold text-mute">
               {t('result.tipsLabel')}
             </p>
             <ul className="space-y-1 text-caption-sm text-charcoal">
@@ -63,9 +64,9 @@ export default function RecommendationCard({
             {recommendation.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-block px-2 py-1 rounded-full bg-surface-card text-ash text-caption-sm"
+                className="inline-block px-2 py-1 rounded-full bg-surface-card text-mute text-caption-sm"
               >
-                #{tag}
+                #{getTagLabel(tag, locale)}
               </span>
             ))}
           </div>

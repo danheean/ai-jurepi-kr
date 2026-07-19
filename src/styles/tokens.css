@@ -128,6 +128,8 @@
     /* Semantic colors adjusted for dark mode */
     --success-pale: #1a4d3d;
     --warning: #f5b623;
+    --error: #f87171;
+    --error-deep: #fca5a5;
 
     /* Category Accents (dark mode: base hues unchanged, -ink lighter, -soft mixed with surface-card) */
     --accent-coral: #ff7a85;

@@ -86,6 +86,7 @@ export default function FaceShapePicker({ onSelect }: FaceShapePickerProps) {
       className="grid grid-cols-2 sm:grid-cols-4 gap-3 auto-rows-max"
       onKeyDown={handleKeyDown}
       role="radiogroup"
+      aria-label={t('face.pickTitle')}
     >
       {FACE_SHAPES.map((shape, index) => (
         <button
@@ -95,7 +96,7 @@ export default function FaceShapePicker({ onSelect }: FaceShapePickerProps) {
           aria-label={t(`face.${shape}`)}
           aria-checked={selectedShape === shape}
           role="radio"
-          className={`flex flex-col items-center gap-2 p-3 rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-outer focus-visible:ring-offset-2 ${
+          className={`relative flex flex-col items-center gap-2 p-3 rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-outer focus-visible:ring-offset-2 ${
             selectedShape === shape
               ? 'border-2 border-primary bg-surface-card'
               : 'border-2 border-hairline bg-canvas hover:border-primary'

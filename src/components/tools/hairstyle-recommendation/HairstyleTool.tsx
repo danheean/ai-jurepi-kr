@@ -343,7 +343,7 @@ export default function HairstyleTool() {
           </h2>
           <button
             onClick={handleSwitchPath}
-            className="text-sm text-mute hover:text-charcoal underline"
+            className="inline-flex items-center min-h-[44px] px-2 -mr-2 text-sm text-mute hover:text-charcoal underline"
           >
             {t('entry.manualLabel')}
           </button>
@@ -352,12 +352,12 @@ export default function HairstyleTool() {
 
         {/* Error banner for analysis failures */}
         {state.error && (
-          <div className="rounded-md bg-red-50 p-4 border border-red-200 space-y-2">
-            <p className="text-sm text-red-900">{state.error.message}</p>
+          <div className="rounded-md bg-error/10 p-4 border border-error/30 space-y-2">
+            <p className="text-sm text-charcoal">{state.error.message}</p>
             {state.error.code === 'NO_FACE_DETECTED' && (
               <button
                 onClick={() => dispatch({ type: 'SWITCH_PATH', payload: 'manual' })}
-                className="text-sm text-red-700 hover:text-red-900 underline font-medium"
+                className="text-sm text-error hover:text-error-deep underline font-medium"
               >
                 {t('analysis.pickManually')}
               </button>
@@ -378,7 +378,7 @@ export default function HairstyleTool() {
           </h2>
           <button
             onClick={handleSwitchPath}
-            className="text-sm text-mute hover:text-charcoal underline"
+            className="inline-flex items-center min-h-[44px] px-2 -mr-2 text-sm text-mute hover:text-charcoal underline"
           >
             {t('entry.photoLabel')}
           </button>
@@ -456,7 +456,7 @@ export default function HairstyleTool() {
           <button
             onClick={handleGetRecommendations}
             disabled={!state.faceShape || state.stage === 'recommending'}
-            className="w-full px-4 py-3 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash min-h-[44px]"
+            className="w-full px-4 py-3 bg-primary text-on-primary rounded-md text-button-md hover:bg-primary-pressed disabled:bg-surface-card disabled:text-ash min-h-[44px]"
           >
             {state.stage === 'recommending' ? t('cta.finding') : t('cta.get')}
           </button>
@@ -467,12 +467,16 @@ export default function HairstyleTool() {
       <div className="lg:col-span-2 space-y-6">
         {/* Analyzing state placeholder */}
         {state.stage === 'analyzing' && (
-          <div className="rounded-md bg-surface-card p-6 text-center">
+          <div
+            className="rounded-md bg-surface-card p-6 text-center"
+            role="status"
+            aria-live="polite"
+          >
             <div
               className={`inline-block w-8 h-8 rounded-full border-4 border-surface-soft border-t-primary ${
                 prefersReducedMotion ? '' : 'animate-spin'
               }`}
-              aria-busy="true"
+              aria-hidden="true"
             />
             <p className="mt-3 text-sm text-mute sr-only">
               {t('upload.analyzing')}
@@ -492,6 +496,12 @@ export default function HairstyleTool() {
         {/* Recommendation results */}
         {state.stage === 'results' && (
           <>
+            <h2 className="text-lg font-bold text-charcoal">
+              {t('result.title')}
+            </h2>
+            <p className="sr-only" role="status">
+              {t('result.readyAnnounce', { count: state.recommendations.length })}
+            </p>
             <RecommendationGrid
               recommendations={state.recommendations}
               previews={state.previews}
@@ -507,6 +517,10 @@ export default function HairstyleTool() {
 
         {/* Recommending skeleton */}
         {state.stage === 'recommending' && (
+          <>
+          <p className="sr-only" role="status">
+            {t('cta.finding')}
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {SKELETON_CARDS.map(({ id }) => (
               <div
@@ -517,6 +531,7 @@ export default function HairstyleTool() {
               />
             ))}
           </div>
+          </>
         )}
 
         {/* Error recovery */}
@@ -526,13 +541,13 @@ export default function HairstyleTool() {
             <div className="flex gap-2 justify-center">
               <button
                 onClick={handleGetRecommendations}
-                className="px-4 py-2 bg-primary text-on-primary rounded-md font-button-md hover:bg-primary-pressed"
+                className="min-h-[44px] px-4 py-2 bg-primary text-on-primary rounded-md text-button-md hover:bg-primary-pressed"
               >
                 {t('result.regenerate')}
               </button>
               <button
                 onClick={handleReset}
-                className="px-4 py-2 bg-secondary-bg text-ink rounded-md font-button-md hover:bg-secondary-pressed"
+                className="min-h-[44px] px-4 py-2 bg-secondary-bg text-ink rounded-md text-button-md hover:bg-secondary-pressed"
               >
                 {t('result.reset')}
               </button>
