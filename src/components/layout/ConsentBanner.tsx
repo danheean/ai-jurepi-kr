@@ -43,15 +43,17 @@ export function ConsentBanner() {
   if (!showBanner) return null;
 
   return (
+    // A compact consent card, not a full-width bar. On desktop it docks to the
+    // bottom-right corner so it never sits over the left-aligned category chips /
+    // favorites toggle (a full-bleed bar overlapped them on tall, short viewports).
+    // On mobile it becomes a centered bottom toast with side gutters.
     <div
       ref={bannerRef}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-surface-dark text-on-dark p-lg border-t border-hairline"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-md md:justify-end md:px-lg md:pb-lg"
     >
-      <div className="max-w-container mx-auto flex flex-col md:flex-row items-center justify-between gap-lg">
-        <div className="flex-1">
-          <p className="text-body-md">{t('message')}</p>
-        </div>
-        <div className="flex items-center gap-md">
+      <div className="pointer-events-auto flex w-full max-w-[26rem] flex-col gap-md rounded-md border border-hairline bg-surface-dark p-lg text-on-dark shadow-pop">
+        <p className="text-body-md">{t('message')}</p>
+        <div className="flex items-center justify-end gap-md">
           <Button
             variant="secondary"
             size="md"

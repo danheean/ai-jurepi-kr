@@ -69,14 +69,18 @@ export function ToolGrid({
 
   if (filteredTools.length === 0) {
     return (
-      <div className="px-lg py-section text-center">
+      <div className="px-lg pt-xxl pb-section text-center">
         <p className="text-body-md text-mute">No tools found.</p>
       </div>
     );
   }
 
   return (
-    <div className="px-lg py-section bg-canvas">
+    // Top gap (pt-xxl) groups the grid tightly under the favorites toggle — it
+    // reads as one continuous explore block (chips → favorites → grid), matching
+    // apps.jurepi.kr's ~48px rhythm. Full pb-section keeps breathing room before
+    // the footer. (Was py-section, which left the toggle floating in an ~80px gap.)
+    <div className="px-lg pt-xxl pb-section bg-canvas">
       <div className="max-w-container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
           {sortedTools.map((tool) => (
