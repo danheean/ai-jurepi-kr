@@ -28,7 +28,7 @@ export default function MobilePhotoChip({
       <img
         src={photoUrl}
         alt={t('workspace.myPhotoTitle')}
-        className="w-10 h-10 rounded-md object-cover flex-shrink-0"
+        className="w-14 h-14 rounded-md object-cover flex-shrink-0"
       />
 
       {/* Face shape badge */}

@@ -398,7 +398,28 @@ export default function HairstyleTool() {
   // Main flow: analyzing, attributes, recommending, results, error
   return (
     <div>
-      {/* Mobile sticky photo chip — first on mobile, above the workspace grid */}
+      {/* Mobile large photo hero — shown once, above the workspace grid. Not sticky (normal flow),
+          so it scrolls away naturally, then the sticky chip below takes over. Kept OUTSIDE <aside>
+          so its own containing block spans the full page height — <aside> is short (photo + analysis
+          card only) and a sticky descendant can never stick past its parent's box, which would break
+          the chip once results scroll past the aside's bottom. */}
+      {state.photo && (
+        <div className="lg:hidden mb-4">
+          {/* No facePreviewEnabled/onFacePreviewToggle here: the desktop rail instance below
+              is the single source of truth for that control — duplicating it would mount a
+              second element with the same id (face-preview-label) and role="switch", which is
+              both invalid HTML and ambiguous for anything that queries the toggle by role. */}
+          <MyPhotoPanel
+            photoUrl={state.photo.objectUrl}
+            onReplace={handleReplace}
+            onRemove={handleRemove}
+            testId="my-photo-panel-mobile"
+          />
+        </div>
+      )}
+
+      {/* Mobile compact sticky chip — sticks to top once the hero above scrolls past, stays pinned
+          through the full results scroll (containing block is this tall top-level wrapper). */}
       {state.photo && (
         <MobilePhotoChip
           photoUrl={state.photo.objectUrl}

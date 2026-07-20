@@ -10,6 +10,7 @@ interface MyPhotoPanelProps {
   onRemove: () => void;
   facePreviewEnabled?: boolean;
   onFacePreviewToggle?: (enabled: boolean) => void;
+  testId?: string;
 }
 
 export default function MyPhotoPanel({
@@ -18,13 +19,14 @@ export default function MyPhotoPanel({
   onRemove,
   facePreviewEnabled = true,
   onFacePreviewToggle,
+  testId = 'my-photo-panel',
 }: MyPhotoPanelProps) {
   const t = useTranslations('tools.hairstyle-recommendation');
 
   return (
     <div
       className="rounded-md bg-canvas p-4 space-y-3"
-      data-testid="my-photo-panel"
+      data-testid={testId}
     >
       <h2 className="text-sm font-bold text-charcoal">
         {t('workspace.myPhotoTitle')}

@@ -521,7 +521,7 @@ test('503 IMAGE_GEN_DISABLED: drain preview queue silently, 0 further requests, 
 // Test: Mobile 375px Viewport + MobilePhotoChip (Sticky)
 // ============================================================================
 
-test('mobile (375px): single column, photo chip sticky at top, my-photo-panel hidden', async ({
+test('mobile (375px): single column, large photo hero followed by sticky compact chip', async ({
   page,
 }) => {
   await page.route('**/api/hairstyle/analyze', (route) => {
@@ -577,11 +577,13 @@ test('mobile (375px): single column, photo chip sticky at top, my-photo-panel hi
   const mobilePhotoChip = page.locator('[data-testid="mobile-photo-chip"]');
   await expect(mobilePhotoChip).toBeVisible();
 
-  // MyPhotoPanel should be hidden (lg:block → hidden on mobile)
-  const myPhotoPanel = page.locator('[data-testid="my-photo-panel"]');
-  // The panel exists in DOM but is hidden via CSS (display: none via lg:hidden)
-  const isVisible = await myPhotoPanel.isVisible().catch(() => false);
-  expect(isVisible).toBe(false);
+  // A large one-time hero photo (mobile-only instance) is visible above the compact
+  // sticky chip (2026-07-20); the desktop rail instance stays hidden on mobile.
+  const myPhotoPanelMobile = page.locator('[data-testid="my-photo-panel-mobile"]');
+  await expect(myPhotoPanelMobile).toBeVisible();
+  const myPhotoPanelDesktop = page.locator('[data-testid="my-photo-panel"]');
+  const isDesktopPanelVisible = await myPhotoPanelDesktop.isVisible().catch(() => false);
+  expect(isDesktopPanelVisible).toBe(false);
 
   // Get recommendations
   await page.getByRole('button', { name: /추천 받기|Get recommendations/i }).click();
@@ -591,6 +593,15 @@ test('mobile (375px): single column, photo chip sticky at top, my-photo-panel hi
 
   // Mobile photo chip should still be visible at top after results
   await expect(mobilePhotoChip).toBeVisible();
+
+  // Regression guard: the chip's containing block must span the full page, not just
+  // <aside> (which is short — photo + analysis card only). Scrolling deep into the
+  // recommendation grid must keep the chip pinned near the top of the viewport,
+  // not scrolled away with the rest of <aside>.
+  await page.mouse.wheel(0, 1200);
+  await expect(mobilePhotoChip).toBeVisible();
+  const chipBox = await mobilePhotoChip.boundingBox();
+  expect(chipBox?.y).toBeLessThan(100);
 });
 
 // ============================================================================

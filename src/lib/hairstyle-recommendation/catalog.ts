@@ -447,7 +447,7 @@ export const HAIRSTYLE_LIBRARY: HairstyleLibraryEntry[] = [
 
   {
     id: 'effortless-waves-all',
-    name: { ko: '노력없는 웨이브', en: 'Effortless Waves' },
+    name: { ko: '꾸안꾸 웨이브', en: 'Effortless Waves' },
     suitableFaceShapes: [
       'oval',
       'round',
